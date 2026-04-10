@@ -1,0 +1,5 @@
+#!/bin/bash
+# PHANTOM Framework Launcher
+# Quick start script for easy access
+
+python3 ~/pentest_gui.py
