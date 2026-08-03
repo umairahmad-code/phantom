@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDPR Data Security Readiness Report — Meridian Legal LLP</title>
+<style>
+    :root {
+        --navy:#0f2440; --navy2:#1b3a5c; --teal:#0ea5a5; --ink:#1a2332;
+        --muted:#5b6b7f; --line:#e2e8f0; --bg:#f4f6f9; --card:#ffffff;
+        --ok:#188a5a; --ok-bg:#e6f6ee; --warn:#b7791f; --warn-bg:#fdf6e3;
+        --bad:#c0392b; --bad-bg:#fdecea; --info:#2a6fb0; --info-bg:#e8f1fa;
+    }
+    .brand-logo { max-height:48px; max-width:200px; margin-bottom:16px;
+        background:#fff; padding:4px 8px; border-radius:4px; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+        background:var(--bg); color:var(--ink);
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+        line-height:1.6; font-size:15px; padding:32px 16px;
+    }
+    .page { max-width:900px; margin:0 auto; }
+    .card {
+        background:var(--card); border:1px solid var(--line);
+        border-radius:10px; padding:28px 32px; margin-bottom:22px;
+        box-shadow:0 1px 3px rgba(15,36,64,.04);
+    }
+    /* Cover */
+    .cover {
+        background:linear-gradient(135deg,var(--navy),var(--navy2));
+        color:#fff; border:none; padding:38px 34px;
+    }
+    .cover .eyebrow { color:var(--teal); font-weight:700; letter-spacing:2px;
+        font-size:12px; text-transform:uppercase; margin-bottom:10px; }
+    .cover h1 { font-size:30px; line-height:1.25; margin-bottom:6px; font-weight:700; }
+    .cover .client { font-size:20px; color:#cfe0f0; margin-bottom:22px; }
+    .cover .meta { display:grid; grid-template-columns:repeat(2,1fr);
+        gap:12px 28px; border-top:1px solid rgba(255,255,255,.15); padding-top:18px; }
+    .cover .meta div label { display:block; color:#9fb6cf; font-size:11px;
+        text-transform:uppercase; letter-spacing:1px; margin-bottom:2px; }
+    .cover .meta div span { color:#fff; font-weight:600; font-size:14px; }
+    /* Verdict */
+    .verdict { display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+    .verdict .stamp {
+        font-size:20px; font-weight:800; letter-spacing:1px; padding:14px 22px;
+        border-radius:10px; white-space:nowrap;
+    }
+    .verdict .stamp.ok  { background:var(--ok-bg);  color:var(--ok);  border:2px solid var(--ok); }
+    .verdict .stamp.warn{ background:var(--warn-bg);color:var(--warn);border:2px solid var(--warn); }
+    .verdict .stamp.bad { background:var(--bad-bg); color:var(--bad); border:2px solid var(--bad); }
+    .verdict .stamp.info{ background:var(--info-bg);color:var(--info);border:2px solid var(--info); }
+    .verdict .headline { flex:1; min-width:240px; color:var(--ink); font-size:15px; }
+    h2 { font-size:19px; color:var(--navy); margin-bottom:14px;
+        padding-bottom:8px; border-bottom:2px solid var(--line); }
+    h3 { font-size:16px; color:var(--navy); }
+    .lead { color:var(--muted); margin-bottom:16px; }
+    .ok-text { color:var(--ok); }
+    /* Stat tiles */
+    .tiles { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-top:6px; }
+    .tile { text-align:center; background:var(--bg); border:1px solid var(--line);
+        border-radius:8px; padding:14px 6px; }
+    .tile .n { font-size:26px; font-weight:800; }
+    .tile .l { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+    .tile.critical .n { color:#c0392b; } .tile.high .n { color:#e67e22; }
+    .tile.medium .n { color:#b7791f; } .tile.low .n { color:#188a5a; }
+    .tile.info .n { color:#2a6fb0; }
+    /* Pills / tags */
+    .pill { display:inline-block; font-size:12px; font-weight:700; padding:4px 11px;
+        border-radius:20px; letter-spacing:.3px; white-space:nowrap; }
+    .pill.sm { font-size:10px; padding:2px 8px; }
+    .pill.ok  { background:var(--ok-bg);  color:var(--ok); }
+    .pill.warn{ background:var(--warn-bg);color:var(--warn); }
+    .pill.bad { background:var(--bad-bg); color:var(--bad); }
+    .pill.info{ background:var(--info-bg);color:var(--info); }
+    .tag { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px;
+        border-radius:4px; color:#fff; letter-spacing:.5px; }
+    .sev-critical { background:#c0392b; } .sev-high { background:#e67e22; }
+    .sev-medium { background:#b7791f; } .sev-low { background:#188a5a; }
+    .sev-info { background:#2a6fb0; }
+    /* Tables */
+    table { width:100%; border-collapse:collapse; }
+    .summary td, .roadmap td, .roadmap th { padding:11px 10px; border-bottom:1px solid var(--line);
+        text-align:left; vertical-align:top; }
+    .roadmap th { font-size:12px; text-transform:uppercase; letter-spacing:.5px;
+        color:var(--muted); border-bottom:2px solid var(--line); }
+    .summary .ctrl-name { font-weight:600; color:var(--navy); }
+    .muted { color:var(--muted); font-size:13px; }
+    .num { font-weight:800; color:var(--navy); width:34px; }
+    /* Control detail */
+    .ctrl-block { padding:18px 0; border-bottom:1px solid var(--line); }
+    .ctrl-block:last-child { border-bottom:none; }
+    .ctrl-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .ctrl-about { color:var(--muted); font-size:14px; margin:6px 0 10px; }
+    .ctrl-note { background:var(--info-bg); color:#245b8c; border-radius:6px;
+        padding:10px 12px; font-size:13px; margin-top:8px; }
+    .finding { background:var(--bg); border:1px solid var(--line);
+        border-left:4px solid var(--teal); border-radius:6px; padding:12px 14px; margin:10px 0; }
+    .finding-top { display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:6px; }
+    .f-title { font-weight:700; color:var(--navy); }
+    .f-plain { font-size:14px; margin-bottom:5px; }
+    .f-fix { font-size:14px; color:#0b6b4f; }
+    .evidence { font-family:"SFMono-Regular",Consolas,monospace; font-size:12px;
+        color:#5b6b7f; background:#eef2f7; padding:4px 8px; border-radius:4px;
+        margin-top:6px; display:inline-block; word-break:break-all; }
+    /* Info boxes */
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .kv label { display:block; font-size:11px; text-transform:uppercase;
+        letter-spacing:1px; color:var(--muted); margin-bottom:2px; }
+    .kv span { font-weight:600; color:var(--navy); }
+    .fine { font-size:12.5px; color:var(--muted); line-height:1.7; }
+    .footer { text-align:center; color:var(--muted); font-size:12px; padding:18px 0; }
+    @media (max-width:640px) {
+        .tiles { grid-template-columns:repeat(3,1fr); }
+        .cover .meta, .grid2 { grid-template-columns:1fr; }
+    }
+    @media print {
+        body { background:#fff; padding:0; font-size:12px; }
+        .card { box-shadow:none; border:1px solid #ccc; page-break-inside:avoid; }
+        .cover { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        .ctrl-block, .finding { page-break-inside:avoid; }
+    }
+</style>
+</head>
+<body>
+<div class="page">
+
+    <div class="card cover">
+        
+        <div class="eyebrow">GDPR Data Security · Article 32 — Security of Processing</div>
+        <h1>GDPR Data Security Readiness Report</h1>
+        <div class="client">Meridian Legal LLP</div>
+        <div class="meta">
+            <div><label>Prepared for</label><span>Meridian Legal LLP</span></div>
+            <div><label>Prepared by</label><span>SecureConsult Ltd</span></div>
+            <div><label>Assessment date</label><span>03 August 2026</span></div>
+            <div><label>Report reference</label><span>GDPR-20260803_163817</span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Overall Readiness</h2>
+        <div class="verdict">
+            <div class="stamp bad">NOT YET READY</div>
+            <div class="headline">7 issue(s) need resolving before this framework&#x27;s requirements are met.</div>
+        </div>
+        <div class="tiles">
+            <div class="tile critical"><div class="n">2</div><div class="l">Critical</div></div>
+            <div class="tile high"><div class="n">5</div><div class="l">High</div></div>
+            <div class="tile medium"><div class="n">4</div><div class="l">Medium</div></div>
+            <div class="tile low"><div class="n">2</div><div class="l">Low</div></div>
+            <div class="tile info"><div class="n">1</div><div class="l">Info</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Scope &amp; Authorisation</h2>
+        <div class="grid2">
+            <div class="kv"><label>Systems in scope</label><span>meridianlegal.example</span></div>
+            <div class="kv"><label>Authorisation</label><span>Written authorisation on file</span></div>
+        </div>
+        <p class="fine" style="margin-top:14px;">This assessment was carried out
+        only against the systems listed above, with the client's written
+        permission. Testing was non-intrusive and limited to externally
+        observable information.</p>
+    </div>
+
+    <div class="card">
+        <h2>Control Area Summary</h2>
+        <p class="lead">How the in-scope systems currently line up against the
+        GDPR Data Security controls.</p>
+        <table class="summary">
+            <tbody>
+                <tr>
+                    <td class="ctrl-name">Encryption in Transit</td>
+                    <td><span class="pill bad">ACTION REQUIRED</span></td>
+                    <td class="muted">2 item(s) to address</td>
+                </tr>
+                <tr>
+                    <td class="ctrl-name">Access Control</td>
+                    <td><span class="pill bad">ACTION REQUIRED</span></td>
+                    <td class="muted">2 item(s) to address</td>
+                </tr>
+                <tr>
+                    <td class="ctrl-name">System Security &amp; Patching</td>
+                    <td><span class="pill bad">ACTION REQUIRED</span></td>
+                    <td class="muted">9 item(s) to address</td>
+                </tr>
+                <tr>
+                    <td class="ctrl-name">Application Security</td>
+                    <td><span class="pill ok">PASS</span></td>
+                    <td class="muted">No external issues</td>
+                </tr>
+                <tr>
+                    <td class="ctrl-name">Email &amp; Anti-Phishing</td>
+                    <td><span class="pill ok">PASS</span></td>
+                    <td class="muted">No external issues</td>
+                </tr>
+                <tr>
+                    <td class="ctrl-name">Confidentiality &amp; Resilience</td>
+                    <td><span class="pill info">VERIFY INTERNALLY</span></td>
+                    <td class="muted">Verify on devices</td>
+                </tr></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Control Area Detail</h2>
+        
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>1. Encryption in Transit</h3>
+                    <span class="pill bad">ACTION REQUIRED</span>
+                </div>
+                <p class="ctrl-about">Personal data must be encrypted when travelling over networks.</p>
+                
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Obsolete SSL/TLS Protocol Enabled</span>
+                            <span class="tag sev-high">HIGH</span>
+                            <span class="pill bad sm">ACTION REQUIRED</span>
+                        </div>
+                        <p class="f-plain">The site still supports old, broken versions of its &#x27;lock&#x27;. Attackers can use known tricks to weaken or read the encrypted traffic.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Disable SSLv2/SSLv3/TLS 1.0/1.1; allow only TLS 1.2+.</p>
+                        <div class="evidence">Obsolete SSL/TLS protocol accepted</div>
+                    </div>
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Certificate Problem (Expired / Self-Signed)</span>
+                            <span class="tag sev-medium">MEDIUM</span>
+                            <span class="pill warn sm">ADVISORY</span>
+                        </div>
+                        <p class="f-plain">The site&#x27;s security certificate is out of date or not properly issued, so visitors can&#x27;t be sure they&#x27;re on the real site.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Install a valid certificate from a trusted CA and automate renewal.</p>
+                        <div class="evidence">Untrusted/expired certificate</div>
+                    </div>
+                
+            </div>
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>2. Access Control</h3>
+                    <span class="pill bad">ACTION REQUIRED</span>
+                </div>
+                <p class="ctrl-about">Only authorised people should be able to reach personal data.</p>
+                
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Weak / Guessable Credentials</span>
+                            <span class="tag sev-high">HIGH</span>
+                            <span class="pill bad sm">ACTION REQUIRED</span>
+                        </div>
+                        <p class="f-plain">A login was cracked because the password was too simple or a default. In plain terms: the passwords are weak and easy to guess, so an attacker can just walk in.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Enforce a strong password policy, change all defaults, add account lockout, and enable multi-factor auth.</p>
+                        <div class="evidence">ssh login &#x27;admin&#x27; with password &#x27;Password1&#x27;</div>
+                    </div>
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Open port 22/SSH</span>
+                            <span class="tag sev-medium">MEDIUM</span>
+                            <span class="pill warn sm">ADVISORY</span>
+                        </div>
+                        <p class="f-plain">A remote &#x27;control panel&#x27; for the server is reachable. It is encrypted, but if the password is weak, attackers can keep guessing until they get in and take over the machine.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Require SSH keys (disable password login), enforce fail2ban/rate-limiting, and restrict source IPs.</p>
+                        <div class="evidence">22/ssh OpenSSH 7.4</div>
+                    </div>
+                
+            </div>
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>3. System Security &amp; Patching</h3>
+                    <span class="pill bad">ACTION REQUIRED</span>
+                </div>
+                <p class="ctrl-about">Systems processing personal data must be kept secure and updated.</p>
+                
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Apache 2.4.49 Path Traversal / RCE (CVE-2021-41773)</span>
+                            <span class="tag sev-critical">CRITICAL</span>
+                            <span class="pill bad sm">ACTION REQUIRED</span>
+                        </div>
+                        <p class="f-plain">This web-server version lets attackers read files they shouldn&#x27;t and can even run commands on the server.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Upgrade Apache to 2.4.51 or later.</p>
+                        <div class="evidence">Apache httpd 2.4.49</div>
+                    </div>
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">vsftpd 2.3.4 Backdoor (CVE-2011-2523)</span>
+                            <span class="tag sev-critical">CRITICAL</span>
+                            <span class="pill bad sm">ACTION REQUIRED</span>
+                        </div>
+                        <p class="f-plain">This exact file-server version contains a hidden backdoor that hands attackers complete control of the machine.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Upgrade vsftpd immediately and treat the host as compromised.</p>
+                        <div class="evidence">vsftpd 2.3.4</div>
+                    </div>
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Open port 21/FTP</span>
+                            <span class="tag sev-high">HIGH</span>
+                            <span class="pill bad sm">ACTION REQUIRED</span>
+                        </div>
+                        <p class="f-plain">A file-sharing service is open to the internet. It sends usernames and passwords without scrambling them, so anyone watching the network can read them.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Replace FTP with SFTP/FTPS, disable anonymous login, and restrict access by IP/VPN.</p>
+                        <div class="evidence">21/ftp vsftpd 2.3.4</div>
+                    </div>
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Open port 3306/MySQL</span>
+                            <span class="tag sev-high">HIGH</span>
+                            <span class="pill bad sm">ACTION REQUIRED</span>
+                        </div>
+                        <p class="f-plain">A database is open directly to the network. Databases hold the crown jewels and should not be reachable from outside.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Bind to localhost/app subnet only and enforce strong credentials.</p>
+                        <div class="evidence">3306/mysql MySQL 5.5.62</div>
+                    </div>
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Open port 3389/RDP</span>
+                            <span class="tag sev-high">HIGH</span>
+                            <span class="pill bad sm">ACTION REQUIRED</span>
+                        </div>
+                        <p class="f-plain">The Windows &#x27;remote screen&#x27; service is open to the internet. Attackers constantly scan for this and try to guess passwords or use known break-in bugs.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Put RDP behind a VPN, enforce MFA and lockout, and patch.</p>
+                        <div class="evidence">3389/ms-wbt-server Microsoft Terminal Services</div>
+                    </div>
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Directory Listing Enabled</span>
+                            <span class="tag sev-medium">MEDIUM</span>
+                            <span class="pill warn sm">ADVISORY</span>
+                        </div>
+                        <p class="f-plain">The website shows a public list of its files and folders, which can reveal things that were meant to stay hidden.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Disable auto-indexing (Options -Indexes) on the web server.</p>
+                        <div class="evidence">Directory listing observed</div>
+                    </div>
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Open port 22/SSH</span>
+                            <span class="tag sev-medium">MEDIUM</span>
+                            <span class="pill warn sm">ADVISORY</span>
+                        </div>
+                        <p class="f-plain">A remote &#x27;control panel&#x27; for the server is reachable. It is encrypted, but if the password is weak, attackers can keep guessing until they get in and take over the machine.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Require SSH keys (disable password login), enforce fail2ban/rate-limiting, and restrict source IPs.</p>
+                        <div class="evidence">22/ssh OpenSSH 7.4</div>
+                    </div>
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Information Disclosure</span>
+                            <span class="tag sev-low">LOW</span>
+                            <span class="pill warn sm">ADVISORY</span>
+                        </div>
+                        <p class="f-plain">The system reveals details about itself (like what software it runs) that help an attacker plan their next move.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Suppress version banners and verbose error messages.</p>
+                        <div class="evidence">Server banner: Apache/2.4.49</div>
+                    </div>
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Missing Security Headers</span>
+                            <span class="tag sev-low">LOW</span>
+                            <span class="pill warn sm">ADVISORY</span>
+                        </div>
+                        <p class="f-plain">The website is missing some standard safety settings that help browsers protect visitors.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Add HSTS, CSP, X-Frame-Options, and X-Content-Type-Options headers.</p>
+                        <div class="evidence">Security header(s) missing</div>
+                    </div>
+                
+            </div>
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>4. Application Security</h3>
+                    <span class="pill ok">PASS</span>
+                </div>
+                <p class="ctrl-about">Web applications handling personal data must resist common attacks.</p>
+                
+                <p class="ctrl-note">No issues affecting this control were observed externally.</p>
+            </div>
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>5. Email &amp; Anti-Phishing</h3>
+                    <span class="pill ok">PASS</span>
+                </div>
+                <p class="ctrl-about">Guard against spoofing that leads to personal-data breaches.</p>
+                
+                <p class="ctrl-note">No issues affecting this control were observed externally.</p>
+            </div>
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>6. Confidentiality &amp; Resilience</h3>
+                    <span class="pill info">VERIFY INTERNALLY</span>
+                </div>
+                <p class="ctrl-about">Backups, availability and staff processes (verified internally).</p>
+                
+                <p class="ctrl-note">Not observable from an external scan — confirm on the devices / with the organisation&#x27;s processes.</p>
+            </div>
+    </div>
+
+    
+
+    
+
+    
+            <div class="card">
+                <h2>Priority Remediation Roadmap</h2>
+                <p class="lead">Address these in order. Once resolved, the systems
+                should meet the externally-checkable Cyber Essentials requirements.</p>
+                <table class="roadmap">
+                    <thead><tr><th>#</th><th>Severity</th><th>Action</th><th>Control area</th></tr></thead>
+                    <tbody>
+                    <tr>
+                        <td class="num">1</td>
+                        <td><span class="tag sev-critical">CRITICAL</span></td>
+                        <td>Upgrade Apache to 2.4.51 or later.</td>
+                        <td class="muted">Security Update Management</td>
+                    </tr>
+                    <tr>
+                        <td class="num">2</td>
+                        <td><span class="tag sev-critical">CRITICAL</span></td>
+                        <td>Upgrade vsftpd immediately and treat the host as compromised.</td>
+                        <td class="muted">Security Update Management</td>
+                    </tr>
+                    <tr>
+                        <td class="num">3</td>
+                        <td><span class="tag sev-high">HIGH</span></td>
+                        <td>Disable SSLv2/SSLv3/TLS 1.0/1.1; allow only TLS 1.2+.</td>
+                        <td class="muted">Secure Configuration</td>
+                    </tr>
+                    <tr>
+                        <td class="num">4</td>
+                        <td><span class="tag sev-high">HIGH</span></td>
+                        <td>Replace FTP with SFTP/FTPS, disable anonymous login, and restrict access by IP/VPN.</td>
+                        <td class="muted">Firewalls &amp; Boundary Protection</td>
+                    </tr>
+                    <tr>
+                        <td class="num">5</td>
+                        <td><span class="tag sev-high">HIGH</span></td>
+                        <td>Bind to localhost/app subnet only and enforce strong credentials.</td>
+                        <td class="muted">Firewalls &amp; Boundary Protection</td>
+                    </tr>
+                    <tr>
+                        <td class="num">6</td>
+                        <td><span class="tag sev-high">HIGH</span></td>
+                        <td>Put RDP behind a VPN, enforce MFA and lockout, and patch.</td>
+                        <td class="muted">Firewalls &amp; Boundary Protection</td>
+                    </tr>
+                    <tr>
+                        <td class="num">7</td>
+                        <td><span class="tag sev-high">HIGH</span></td>
+                        <td>Enforce a strong password policy, change all defaults, add account lockout, and enable multi-factor auth.</td>
+                        <td class="muted">User Access Control</td>
+                    </tr></tbody>
+                </table>
+            </div>
+
+    <div class="card">
+        <h2>Methodology &amp; Limitations</h2>
+        <p class="fine">Findings were produced by the PHANTOM assessment
+        framework from an external perspective (the view an attacker has of your
+        internet-facing systems) and mapped onto the GDPR Data Security control areas.
+        Controls marked &ldquo;Verify Internally&rdquo; (such as malware
+        protection and device configuration) cannot be confirmed from outside
+        and must be checked on the devices themselves — the PHANTOM internal
+        controls checker can confirm these. This readiness report is preparatory
+        guidance and is not itself a certificate.</p>
+    </div>
+
+    <div class="footer">
+        <p>GDPR-20260803_163817 &nbsp;·&nbsp; Prepared by SecureConsult Ltd &nbsp;·&nbsp; 03 August 2026</p>
+        <p>Confidential — prepared for Meridian Legal LLP. Generated with the PHANTOM Framework.</p>
+    </div>
+
+</div>
+</body>
+</html>

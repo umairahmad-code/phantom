@@ -1,5 +1,14 @@
 #!/bin/bash
 # PHANTOM Framework Launcher
-# Quick start script for easy access
+# Portable: resolves its own location, so it runs from any install path.
 
-python3 ~/pentest_gui.py
+DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+
+# Prefer a local virtualenv if one exists, else system python3.
+if [ -x "$DIR/.venv/bin/python3" ]; then
+    PYTHON="$DIR/.venv/bin/python3"
+else
+    PYTHON="python3"
+fi
+
+cd "$DIR" && exec "$PYTHON" src/pentest_gui.py "$@"

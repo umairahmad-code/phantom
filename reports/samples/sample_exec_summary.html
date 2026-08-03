@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executive Summary — Meridian Legal LLP</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#f4f6f9; color:#1a2332; padding:32px 16px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+        line-height:1.6; }
+    .page { max-width:760px; margin:0 auto; }
+    .card { background:#fff; border:1px solid #e2e8f0; border-radius:10px;
+        padding:26px 30px; margin-bottom:18px; }
+    .cover { background:linear-gradient(135deg,#0f2440,#1b3a5c); color:#fff; border:none; }
+    .cover .eyebrow { color:#0ea5a5; font-weight:700; letter-spacing:2px;
+        font-size:11px; text-transform:uppercase; margin-bottom:8px; }
+    .cover h1 { font-size:24px; }
+    .cover .client { color:#cfe0f0; font-size:17px; margin-top:4px; }
+    h2 { font-size:17px; color:#0f2440; margin-bottom:12px;
+        padding-bottom:6px; border-bottom:2px solid #e2e8f0; }
+    .stamp { display:inline-block; font-size:19px; font-weight:800; padding:12px 20px;
+        border-radius:9px; letter-spacing:.5px; }
+    .ok { background:#e6f6ee; color:#188a5a; border:2px solid #188a5a; }
+    .warn { background:#fdf6e3; color:#b7791f; border:2px solid #b7791f; }
+    .bad { background:#fdecea; color:#c0392b; border:2px solid #c0392b; }
+    .row { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+    ol, ul { margin:6px 0 0 20px; } li { margin-bottom:7px; }
+    .muted { color:#5b6b7f; font-size:13px; }
+    .big { font-size:34px; font-weight:800; }
+    .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .tile { text-align:center; background:#f4f6f9; border:1px solid #e2e8f0;
+        border-radius:8px; padding:14px; }
+    .brand-logo { max-height:44px; max-width:180px; margin-bottom:12px;
+        background:#fff; padding:4px 8px; border-radius:4px; }
+    @media print { body { background:#fff; padding:0; } .card { border:1px solid #ccc; }
+        .cover { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+</style></head>
+<body><div class="page">
+    <div class="card cover">
+        
+        <div class="eyebrow">Cyber Essentials · Executive Summary</div>
+        <h1>Security Assessment — Executive Summary</h1>
+        <div class="client">Meridian Legal LLP</div>
+    </div>
+    <div class="card">
+        <div class="row">
+            <div class="stamp bad">NOT YET READY</div>
+            <div style="flex:1; min-width:220px;">8 issue(s) would currently prevent a Cyber Essentials pass. All are fixable — see the remediation roadmap below.</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="grid3">
+            <div class="tile"><div class="big" style="color:#c0392b;">8</div>
+                <div class="muted">Issues to fix</div></div>
+            <div class="tile"><div class="big" style="color:#188a5a;">0</div>
+                <div class="muted">Controls passing</div></div>
+            <div class="tile"><div class="big" style="color:#b7791f;">4</div>
+                <div class="muted">Controls needing work</div></div>
+        </div>
+    </div>
+    <div class="card">
+        <h2>Top Priorities</h2>
+        <ol><li><strong>Apache 2.4.49 Path Traversal / RCE (CVE-2021-41773)</strong> — Upgrade Apache to 2.4.51 or later.</li><li><strong>vsftpd 2.3.4 Backdoor (CVE-2011-2523)</strong> — Upgrade vsftpd immediately and treat the host as compromised.</li><li><strong>Obsolete SSL/TLS Protocol Enabled</strong> — Disable SSLv2/SSLv3/TLS 1.0/1.1; allow only TLS 1.2+.</li></ol>
+    </div>
+    <div class="card">
+        <h2>What This Means</h2>
+        <p class="muted">This one-page summary highlights the headline result and
+        the most important fixes. Full technical detail, every finding, and the
+        step-by-step remediation plan are in the accompanying full report.</p>
+    </div>
+    <div class="card" style="text-align:center;">
+        <p class="muted">Prepared by PHANTOM Security
+        &nbsp;·&nbsp; Confidential — for Meridian Legal LLP</p>
+    </div>
+</div></body></html>

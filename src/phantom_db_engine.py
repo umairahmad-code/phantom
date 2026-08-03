@@ -10,8 +10,17 @@ import json
 import datetime
 from pathlib import Path
 
+try:
+    import phantom_config as config
+    from phantom_logging import get_logger
+except ImportError:  # imported as src.phantom_db_engine
+    from src import phantom_config as config
+    from src.phantom_logging import get_logger
+
+log = get_logger("phantom.db")
+
 # ─── DATABASE INITIALIZATION ─────────────────────
-DB_PATH = os.path.expanduser("~/.phantom/scans.db")
+DB_PATH = config.db_path()
 DB_DIR = os.path.dirname(DB_PATH)
 
 if not os.path.exists(DB_DIR):
@@ -27,13 +36,18 @@ class PhantomDatabase:
         self.init_db()
 
     def connect(self):
-        """Connect to database"""
+        """Connect to database (WAL + busy timeout for safe concurrent scans)."""
         try:
-            self.conn = sqlite3.connect(self.db_path)
+            # timeout: block up to 10s for a lock instead of erroring instantly.
+            # check_same_thread=False: GUI scan threads each open their own
+            # connection; WAL lets readers and one writer proceed concurrently.
+            self.conn = sqlite3.connect(self.db_path, timeout=10, check_same_thread=False)
             self.conn.row_factory = sqlite3.Row
+            self.conn.execute("PRAGMA journal_mode=WAL")
+            self.conn.execute("PRAGMA busy_timeout=10000")
             return True
         except Exception as e:
-            print(f"❌ Database connection failed: {e}")
+            log.error(f"Database connection failed: {e}")
             return False
 
     def close(self):
@@ -166,7 +180,7 @@ class PhantomDatabase:
             self._audit_log("CREATE_SCAN", team_member, f"Started scan: {scan_id} on {target}")
             return scan_id
         except Exception as e:
-            print(f"❌ Error creating scan: {e}")
+            log.error(f"Error creating scan: {e}")
             return None
         finally:
             self.close()
@@ -186,7 +200,7 @@ class PhantomDatabase:
             self.conn.commit()
             return True
         except Exception as e:
-            print(f"❌ Error saving result: {e}")
+            log.error(f"Error saving result: {e}")
             return False
         finally:
             self.close()
@@ -206,7 +220,7 @@ class PhantomDatabase:
             self.conn.commit()
             return True
         except Exception as e:
-            print(f"❌ Error saving vulnerability: {e}")
+            log.error(f"Error saving vulnerability: {e}")
             return False
         finally:
             self.close()
@@ -226,7 +240,7 @@ class PhantomDatabase:
             self.conn.commit()
             return True
         except Exception as e:
-            print(f"❌ Error saving host: {e}")
+            log.error(f"Error saving host: {e}")
             return False
         finally:
             self.close()
@@ -260,7 +274,7 @@ class PhantomDatabase:
                         VALUES (?, ?, ?, ?, ?)
                     """, (scan_id, vulnerability, exploit["name"], exploit.get("cvss", 0), datetime.datetime.now()))
                 except Exception as e:
-                    print(f"❌ Error suggesting exploit: {e}")
+                    log.error(f"Error suggesting exploit: {e}")
 
         self.conn.commit()
         self.close()
@@ -293,7 +307,7 @@ class PhantomDatabase:
                 "results": result_count,
             }
         except Exception as e:
-            print(f"❌ Error getting summary: {e}")
+            log.error(f"Error getting summary: {e}")
             return None
         finally:
             self.close()
@@ -318,14 +332,21 @@ class PhantomDatabase:
             cursor.execute("SELECT * FROM exploits WHERE scan_id = ?", (scan_id,))
             exploits = [dict(row) for row in cursor.fetchall()]
 
+            cursor.execute(
+                "SELECT tool_name, tool_output FROM results WHERE scan_id = ? ORDER BY id",
+                (scan_id,),
+            )
+            results = [dict(row) for row in cursor.fetchall()]
+
             return {
                 "scan": dict(scan) if scan else None,
                 "vulnerabilities": vulns,
                 "hosts": hosts,
                 "exploits": exploits,
+                "results": results,
             }
         except Exception as e:
-            print(f"❌ Error getting details: {e}")
+            log.error(f"Error getting details: {e}")
             return None
         finally:
             self.close()
@@ -341,7 +362,7 @@ class PhantomDatabase:
             cursor.execute("SELECT * FROM scans ORDER BY timestamp DESC LIMIT 50")
             return [dict(row) for row in cursor.fetchall()]
         except Exception as e:
-            print(f"❌ Error getting scans: {e}")
+            log.error(f"Error getting scans: {e}")
             return []
         finally:
             self.close()
@@ -365,7 +386,7 @@ class PhantomDatabase:
             self.conn.commit()
             return True
         except Exception as e:
-            print(f"❌ Error updating scan: {e}")
+            log.error(f"Error updating scan: {e}")
             return False
         finally:
             self.close()
@@ -386,7 +407,7 @@ class PhantomDatabase:
             self._audit_log("ADD_FINDING", team_member, f"Added finding to {scan_id}")
             return True
         except Exception as e:
-            print(f"❌ Error adding finding: {e}")
+            log.error(f"Error adding finding: {e}")
             return False
         finally:
             self.close()
@@ -404,7 +425,7 @@ class PhantomDatabase:
             """, (scan_id,))
             return [dict(row) for row in cursor.fetchall()]
         except Exception as e:
-            print(f"❌ Error getting findings: {e}")
+            log.error(f"Error getting findings: {e}")
             return []
         finally:
             self.close()
@@ -423,7 +444,7 @@ class PhantomDatabase:
             """, (action, user, datetime.datetime.now(), details))
             self.conn.commit()
         except Exception as e:
-            print(f"❌ Audit log error: {e}")
+            log.error(f"Audit log error: {e}")
 
 
 # ─── HELPER FUNCTIONS ───────────────────────────

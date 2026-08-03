@@ -1,0 +1,14 @@
+# PHANTOM Framework — Python dependencies
+# Install:  pip3 install -r requirements.txt
+
+# ── Required ──────────────────────────────────────────
+PyQt5>=5.15,<6            # GUI toolkit (main application)
+requests>=2.28            # Ollama / HTTP calls for the AI engine
+
+# ── Optional ──────────────────────────────────────────
+# PDF report generation. HTML/JSON/CSV reports work without it.
+# Uncomment to enable PDF export:
+# reportlab>=4.0
+
+# Standard-library only (no install needed): sqlite3, ipaddress, shlex,
+# logging, json, urllib — used by the scope/validation/DB/logging modules.
