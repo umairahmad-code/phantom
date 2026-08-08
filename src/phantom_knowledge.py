@@ -610,3 +610,68 @@ def match_cve(banner):
                 "evidence": banner.strip(),
             })
     return out
+
+
+# ── End-of-life / outdated-version detection ──────────────────────────
+# Catches software that is old / unsupported even when there is no single
+# famous CVE for that exact build — the case a real assessor flags but a
+# narrow CVE list misses (e.g. OpenSSH 6.6.1p1 on the scanme.nmap.org test).
+# Each pattern matches a version RANGE known to be end-of-life or superseded.
+EOL_SIGNATURES = [
+    {"re": re.compile(r'OpenSSH[_ /]?([0-6]\.\d+|7\.[0-3])(?:\.\d+)?(?:p\d)?', re.I),
+     "product": "OpenSSH (pre-7.4)", "severity": "high",
+     "remediation": "Upgrade OpenSSH to a current supported release (8.x/9.x)."},
+    {"re": re.compile(r'Apache(?:/| httpd/?| )?2\.2\.\d+', re.I),
+     "product": "Apache httpd 2.2.x", "severity": "high",
+     "remediation": "Upgrade to a supported Apache 2.4.x release."},
+    {"re": re.compile(r'\bPHP/(?:[45]\.\d+|7\.[0-3])', re.I),
+     "product": "PHP (5.x/7.0–7.3)", "severity": "high",
+     "remediation": "Upgrade to a supported PHP 8.x release."},
+    {"re": re.compile(r'Microsoft-IIS/(?:[567])\.0', re.I),
+     "product": "Microsoft IIS (6.0/7.0)", "severity": "high",
+     "remediation": "Migrate to a supported Windows Server / IIS version."},
+    {"re": re.compile(r'nginx/1\.(?:[0-9]|1[0-3])\.\d+', re.I),
+     "product": "nginx (pre-1.14)", "severity": "medium",
+     "remediation": "Upgrade nginx to a current stable release."},
+    {"re": re.compile(r'\bMySQL\s+5\.[0-6]\.\d+', re.I),
+     "product": "MySQL (5.0–5.6)", "severity": "medium",
+     "remediation": "Upgrade to MySQL 8.x or a supported MariaDB."},
+    {"re": re.compile(r'OpenSSL/1\.0\.\d', re.I),
+     "product": "OpenSSL 1.0.x", "severity": "high",
+     "remediation": "Upgrade OpenSSL to 1.1.1+/3.x and rebuild dependent services."},
+    {"re": re.compile(r'ProFTPD\s+1\.3\.[0-4]\b', re.I),
+     "product": "ProFTPD (1.3.0–1.3.4)", "severity": "medium",
+     "remediation": "Upgrade ProFTPD to the latest release."},
+    {"re": re.compile(r'vsftpd\s+([12]\.\d+)', re.I),
+     "product": "vsftpd (1.x/2.x)", "severity": "medium",
+     "remediation": "Upgrade vsftpd to a current 3.x release."},
+    {"re": re.compile(r'Exim\s+4\.[0-8]\d?\b', re.I),
+     "product": "Exim (pre-4.90)", "severity": "high",
+     "remediation": "Upgrade Exim to the latest 4.9x release."},
+]
+
+
+def match_eol(banner):
+    """Return outdated/end-of-life findings for a version banner (may be empty)."""
+    out = []
+    if not banner:
+        return out
+    for sig in EOL_SIGNATURES:
+        m = sig["re"].search(banner)
+        if m:
+            out.append({
+                "kind": "outdated_service",
+                "title": f"End-of-Life / Outdated Software: {sig['product']}",
+                "severity": sig["severity"],
+                "technical": f"An end-of-life / outdated version was detected "
+                             f"({m.group(0)}). Unsupported software no longer "
+                             f"receives security patches.",
+                "plain": "Software running here is an old, unsupported version "
+                         "that no longer gets security updates — the maker has "
+                         "stopped fixing it, so new holes never get patched.",
+                "risk": "End-of-life software steadily accumulates unpatched "
+                        "vulnerabilities and is a common way attackers get in.",
+                "remediation": sig["remediation"],
+                "evidence": m.group(0),
+            })
+    return out

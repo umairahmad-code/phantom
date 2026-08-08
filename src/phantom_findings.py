@@ -46,6 +46,8 @@ def _parse_ports(output, findings, seen, tool):
         _add(findings, seen, kb.explain_port(port, service, version), tool)
         for cve in kb.match_cve(version):
             _add(findings, seen, cve, tool)
+        for eol in kb.match_eol(version):
+            _add(findings, seen, eol, tool)
 
 
 def _parse_ssl(output, findings, seen, tool):
@@ -68,6 +70,8 @@ def _parse_cve_banners(output, findings, seen, tool):
     for m in re.finditer(r'(?:Server:|banner:|version)\s*([^\n]+)', output, re.I):
         for cve in kb.match_cve(m.group(1)):
             _add(findings, seen, cve, tool)
+        for eol in kb.match_eol(m.group(1)):
+            _add(findings, seen, eol, tool)
 
 
 def _parse_credentials(output, findings, seen, tool):

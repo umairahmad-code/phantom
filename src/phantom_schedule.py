@@ -24,9 +24,7 @@ CLI (cron example — weekly):
 
 import os
 import json
-import shutil
 import datetime
-import subprocess
 
 try:
     import phantom_scope as scope_mod
@@ -34,22 +32,16 @@ try:
     import phantom_frameworks as frameworks
     import phantom_retest as retest
     import phantom_reports as reports
+    import phantom_scan as scan_mod
 except ImportError:  # imported as src.phantom_schedule
     from src import phantom_scope as scope_mod
     from src import phantom_findings as findings_mod
     from src import phantom_frameworks as frameworks
     from src import phantom_retest as retest
     from src import phantom_reports as reports
+    from src import phantom_scan as scan_mod
 
 STATE_DIR = os.path.expanduser("~/.phantom/schedule")
-
-# Non-intrusive default commands. {t} is replaced by the target. Only commands
-# whose tool is installed are run; the rest are skipped.
-SAFE_PROFILE = [
-    ("nmap", "nmap -sV -Pn -T3 --top-ports 200 {t}"),
-    ("nikto", "nikto -host {t} -maxtime 120s"),
-    ("whatweb", "whatweb {t}"),
-]
 
 
 def _state_path(target):
@@ -95,22 +87,10 @@ def run_scheduled_assessment(target, engagement=None, framework="cyber_essential
                           f"PHANTOM's Scope tab first — scheduling cannot "
                           f"authorise a target on its own."}
 
-    profile = profile or SAFE_PROFILE
-    results = []
-    for tool, template in profile:
-        if not shutil.which(tool):
-            continue
-        cmd = template.format(t=target)
-        allowed, reason = scope_mod.authorize_command(cmd, tool, scope)
-        if not allowed:
-            results.append({"tool_name": tool, "tool_output": f"[SKIPPED] {reason}"})
-            continue
-        try:
-            out = subprocess.run(cmd.split(), capture_output=True, text=True,
-                                 timeout=300).stdout
-        except (subprocess.SubprocessError, OSError) as e:
-            out = f"[ERROR] {e}"
-        results.append({"tool_name": tool, "tool_output": out})
+    # Orchestrated non-intrusive scan (gentle default: top-1000 + notable ports
+    # + adaptive web checks). Unattended runs stay gentle to avoid IP blocking.
+    scan_result = scan_mod.run_scan(target, scope=scope, full_ports=False)
+    results = scan_result["results"]
 
     # Change tracking vs the previous run.
     previous = _load_previous(target)

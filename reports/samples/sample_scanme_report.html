@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Essentials Readiness Report — Nmap Project (scanme)</title>
+<style>
+    :root {
+        --navy:#0f2440; --navy2:#1b3a5c; --teal:#0ea5a5; --ink:#1a2332;
+        --muted:#5b6b7f; --line:#e2e8f0; --bg:#f4f6f9; --card:#ffffff;
+        --ok:#188a5a; --ok-bg:#e6f6ee; --warn:#b7791f; --warn-bg:#fdf6e3;
+        --bad:#c0392b; --bad-bg:#fdecea; --info:#2a6fb0; --info-bg:#e8f1fa;
+    }
+    .brand-logo { max-height:48px; max-width:200px; margin-bottom:16px;
+        background:#fff; padding:4px 8px; border-radius:4px; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+        background:var(--bg); color:var(--ink);
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+        line-height:1.6; font-size:15px; padding:32px 16px;
+    }
+    .page { max-width:900px; margin:0 auto; }
+    .card {
+        background:var(--card); border:1px solid var(--line);
+        border-radius:10px; padding:28px 32px; margin-bottom:22px;
+        box-shadow:0 1px 3px rgba(15,36,64,.04);
+    }
+    /* Cover */
+    .cover {
+        background:linear-gradient(135deg,var(--navy),var(--navy2));
+        color:#fff; border:none; padding:38px 34px;
+    }
+    .cover .eyebrow { color:var(--teal); font-weight:700; letter-spacing:2px;
+        font-size:12px; text-transform:uppercase; margin-bottom:10px; }
+    .cover h1 { font-size:30px; line-height:1.25; margin-bottom:6px; font-weight:700; }
+    .cover .client { font-size:20px; color:#cfe0f0; margin-bottom:22px; }
+    .cover .meta { display:grid; grid-template-columns:repeat(2,1fr);
+        gap:12px 28px; border-top:1px solid rgba(255,255,255,.15); padding-top:18px; }
+    .cover .meta div label { display:block; color:#9fb6cf; font-size:11px;
+        text-transform:uppercase; letter-spacing:1px; margin-bottom:2px; }
+    .cover .meta div span { color:#fff; font-weight:600; font-size:14px; }
+    /* Verdict */
+    .verdict { display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+    .verdict .stamp {
+        font-size:20px; font-weight:800; letter-spacing:1px; padding:14px 22px;
+        border-radius:10px; white-space:nowrap;
+    }
+    .verdict .stamp.ok  { background:var(--ok-bg);  color:var(--ok);  border:2px solid var(--ok); }
+    .verdict .stamp.warn{ background:var(--warn-bg);color:var(--warn);border:2px solid var(--warn); }
+    .verdict .stamp.bad { background:var(--bad-bg); color:var(--bad); border:2px solid var(--bad); }
+    .verdict .stamp.info{ background:var(--info-bg);color:var(--info);border:2px solid var(--info); }
+    .verdict .headline { flex:1; min-width:240px; color:var(--ink); font-size:15px; }
+    h2 { font-size:19px; color:var(--navy); margin-bottom:14px;
+        padding-bottom:8px; border-bottom:2px solid var(--line); }
+    h3 { font-size:16px; color:var(--navy); }
+    .lead { color:var(--muted); margin-bottom:16px; }
+    .ok-text { color:var(--ok); }
+    /* Stat tiles */
+    .tiles { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-top:6px; }
+    .tile { text-align:center; background:var(--bg); border:1px solid var(--line);
+        border-radius:8px; padding:14px 6px; }
+    .tile .n { font-size:26px; font-weight:800; }
+    .tile .l { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+    .tile.critical .n { color:#c0392b; } .tile.high .n { color:#e67e22; }
+    .tile.medium .n { color:#b7791f; } .tile.low .n { color:#188a5a; }
+    .tile.info .n { color:#2a6fb0; }
+    /* Pills / tags */
+    .pill { display:inline-block; font-size:12px; font-weight:700; padding:4px 11px;
+        border-radius:20px; letter-spacing:.3px; white-space:nowrap; }
+    .pill.sm { font-size:10px; padding:2px 8px; }
+    .pill.ok  { background:var(--ok-bg);  color:var(--ok); }
+    .pill.warn{ background:var(--warn-bg);color:var(--warn); }
+    .pill.bad { background:var(--bad-bg); color:var(--bad); }
+    .pill.info{ background:var(--info-bg);color:var(--info); }
+    .tag { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px;
+        border-radius:4px; color:#fff; letter-spacing:.5px; }
+    .sev-critical { background:#c0392b; } .sev-high { background:#e67e22; }
+    .sev-medium { background:#b7791f; } .sev-low { background:#188a5a; }
+    .sev-info { background:#2a6fb0; }
+    /* Tables */
+    table { width:100%; border-collapse:collapse; }
+    .summary td, .roadmap td, .roadmap th { padding:11px 10px; border-bottom:1px solid var(--line);
+        text-align:left; vertical-align:top; }
+    .roadmap th { font-size:12px; text-transform:uppercase; letter-spacing:.5px;
+        color:var(--muted); border-bottom:2px solid var(--line); }
+    .summary .ctrl-name { font-weight:600; color:var(--navy); }
+    .muted { color:var(--muted); font-size:13px; }
+    .num { font-weight:800; color:var(--navy); width:34px; }
+    /* Control detail */
+    .ctrl-block { padding:18px 0; border-bottom:1px solid var(--line); }
+    .ctrl-block:last-child { border-bottom:none; }
+    .ctrl-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .ctrl-about { color:var(--muted); font-size:14px; margin:6px 0 10px; }
+    .ctrl-note { background:var(--info-bg); color:#245b8c; border-radius:6px;
+        padding:10px 12px; font-size:13px; margin-top:8px; }
+    .finding { background:var(--bg); border:1px solid var(--line);
+        border-left:4px solid var(--teal); border-radius:6px; padding:12px 14px; margin:10px 0; }
+    .finding-top { display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:6px; }
+    .f-title { font-weight:700; color:var(--navy); }
+    .f-plain { font-size:14px; margin-bottom:5px; }
+    .f-fix { font-size:14px; color:#0b6b4f; }
+    .evidence { font-family:"SFMono-Regular",Consolas,monospace; font-size:12px;
+        color:#5b6b7f; background:#eef2f7; padding:4px 8px; border-radius:4px;
+        margin-top:6px; display:inline-block; word-break:break-all; }
+    /* Info boxes */
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .kv label { display:block; font-size:11px; text-transform:uppercase;
+        letter-spacing:1px; color:var(--muted); margin-bottom:2px; }
+    .kv span { font-weight:600; color:var(--navy); }
+    .fine { font-size:12.5px; color:var(--muted); line-height:1.7; }
+    .footer { text-align:center; color:var(--muted); font-size:12px; padding:18px 0; }
+    @media (max-width:640px) {
+        .tiles { grid-template-columns:repeat(3,1fr); }
+        .cover .meta, .grid2 { grid-template-columns:1fr; }
+    }
+    @media print {
+        body { background:#fff; padding:0; font-size:12px; }
+        .card { box-shadow:none; border:1px solid #ccc; page-break-inside:avoid; }
+        .cover { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        .ctrl-block, .finding { page-break-inside:avoid; }
+    }
+</style>
+</head>
+<body>
+<div class="page">
+
+    <div class="card cover">
+        
+        <div class="eyebrow">Cyber Essentials · 5 technical controls</div>
+        <h1>Cyber Essentials Readiness Report</h1>
+        <div class="client">Nmap Project (scanme)</div>
+        <div class="meta">
+            <div><label>Prepared for</label><span>Nmap Project (scanme)</span></div>
+            <div><label>Prepared by</label><span>PHANTOM Security</span></div>
+            <div><label>Assessment date</label><span>03 August 2026</span></div>
+            <div><label>Report reference</label><span>CYBE-20260803_165516</span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Overall Readiness</h2>
+        <div class="verdict">
+            <div class="stamp warn">ON TRACK</div>
+            <div class="headline">No blocking issues were found externally. 2 good-practice item(s) should be tidied up, and the internal controls confirmed, before assessment.</div>
+        </div>
+        <div class="tiles">
+            <div class="tile critical"><div class="n">0</div><div class="l">Critical</div></div>
+            <div class="tile high"><div class="n">0</div><div class="l">High</div></div>
+            <div class="tile medium"><div class="n">1</div><div class="l">Medium</div></div>
+            <div class="tile low"><div class="n">0</div><div class="l">Low</div></div>
+            <div class="tile info"><div class="n">0</div><div class="l">Info</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Scope &amp; Authorisation</h2>
+        <div class="grid2">
+            <div class="kv"><label>Systems in scope</label><span>scanme.nmap.org</span></div>
+            <div class="kv"><label>Authorisation</label><span>Operator-asserted authorisation</span></div>
+        </div>
+        <p class="fine" style="margin-top:14px;">This assessment was carried out
+        only against the systems listed above, with the client's written
+        permission. Testing was non-intrusive and limited to externally
+        observable information.</p>
+    </div>
+
+    <div class="card">
+        <h2>Control Area Summary</h2>
+        <p class="lead">How the in-scope systems currently line up against the
+        Cyber Essentials controls.</p>
+        <table class="summary">
+            <tbody>
+                <tr>
+                    <td class="ctrl-name">Firewalls &amp; Boundary Protection</td>
+                    <td><span class="pill warn">ADVISORY</span></td>
+                    <td class="muted">1 item(s) to address</td>
+                </tr>
+                <tr>
+                    <td class="ctrl-name">Secure Configuration</td>
+                    <td><span class="pill ok">PASS</span></td>
+                    <td class="muted">No external issues</td>
+                </tr>
+                <tr>
+                    <td class="ctrl-name">Security Update Management</td>
+                    <td><span class="pill ok">PASS</span></td>
+                    <td class="muted">No external issues</td>
+                </tr>
+                <tr>
+                    <td class="ctrl-name">User Access Control</td>
+                    <td><span class="pill warn">ADVISORY</span></td>
+                    <td class="muted">1 item(s) to address</td>
+                </tr>
+                <tr>
+                    <td class="ctrl-name">Malware Protection</td>
+                    <td><span class="pill info">VERIFY INTERNALLY</span></td>
+                    <td class="muted">Verify on devices</td>
+                </tr></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Control Area Detail</h2>
+        
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>1. Firewalls &amp; Boundary Protection</h3>
+                    <span class="pill warn">ADVISORY</span>
+                </div>
+                <p class="ctrl-about">Only the services you actually need should be reachable from the internet. Everything else should sit behind a firewall.</p>
+                
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Open port 22/SSH</span>
+                            <span class="tag sev-medium">MEDIUM</span>
+                            <span class="pill warn sm">ADVISORY</span>
+                        </div>
+                        <p class="f-plain">A remote &#x27;control panel&#x27; for the server is reachable. It is encrypted, but if the password is weak, attackers can keep guessing until they get in and take over the machine.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Require SSH keys (disable password login), enforce fail2ban/rate-limiting, and restrict source IPs.</p>
+                        <div class="evidence">22/ssh OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.13 (Ubuntu Linux; protocol 2.0)</div>
+                    </div>
+                
+            </div>
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>2. Secure Configuration</h3>
+                    <span class="pill ok">PASS</span>
+                </div>
+                <p class="ctrl-about">Systems and software should be set up securely — no default settings, weak encryption, or information leaks.</p>
+                
+                <p class="ctrl-note">No issues affecting this control were observed externally. Internal configuration should still be confirmed against the Cyber Essentials requirements.</p>
+            </div>
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>3. Security Update Management</h3>
+                    <span class="pill ok">PASS</span>
+                </div>
+                <p class="ctrl-about">Software must be supported and patched. Known, unpatched vulnerabilities are the most common way in.</p>
+                
+                <p class="ctrl-note">No issues affecting this control were observed externally. Internal configuration should still be confirmed against the Cyber Essentials requirements.</p>
+            </div>
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>4. User Access Control</h3>
+                    <span class="pill warn">ADVISORY</span>
+                </div>
+                <p class="ctrl-about">Accounts must use strong, unique credentials and least privilege. Weak or default logins are an open door.</p>
+                
+                    <div class="finding">
+                        <div class="finding-top">
+                            <span class="f-title">Open port 22/SSH</span>
+                            <span class="tag sev-medium">MEDIUM</span>
+                            <span class="pill warn sm">ADVISORY</span>
+                        </div>
+                        <p class="f-plain">A remote &#x27;control panel&#x27; for the server is reachable. It is encrypted, but if the password is weak, attackers can keep guessing until they get in and take over the machine.</p>
+                        <p class="f-fix"><strong>Fix:</strong> Require SSH keys (disable password login), enforce fail2ban/rate-limiting, and restrict source IPs.</p>
+                        <div class="evidence">22/ssh OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.13 (Ubuntu Linux; protocol 2.0)</div>
+                    </div>
+                
+            </div>
+            <div class="ctrl-block">
+                <div class="ctrl-head">
+                    <h3>5. Malware Protection</h3>
+                    <span class="pill info">VERIFY INTERNALLY</span>
+                </div>
+                <p class="ctrl-about">Every device needs anti-malware protection. This is verified on the devices themselves, not from an external scan.</p>
+                
+                <p class="ctrl-note">Not observable from an external scan. Confirm that anti-malware is installed, enabled, and updating on every in-scope device (or that application allow-listing is enforced).</p>
+            </div>
+    </div>
+
+    
+    <div class="card">
+        <h2>Email &amp; Domain Security</h2>
+        <p class="lead">Can criminals send phishing emails that look like they
+        come from <strong>scanme.nmap.org</strong>? (Grade:
+        <strong>F</strong>) ⚠ This domain can currently be spoofed in phishing emails.</p>
+        
+                <div class="finding">
+                    <div class="finding-top">
+                        <span class="f-title">SPF record missing</span>
+                        <span class="tag sev-high">HIGH</span>
+                    </div>
+                    <p class="f-plain">Anyone can send email pretending to be your domain.</p>
+                    <p class="f-fix"><strong>Fix:</strong> Publish an SPF TXT record listing your legitimate mail senders.</p>
+                </div>
+                <div class="finding">
+                    <div class="finding-top">
+                        <span class="f-title">DMARC record missing</span>
+                        <span class="tag sev-high">HIGH</span>
+                    </div>
+                    <p class="f-plain">Without DMARC, spoofed emails aren&#x27;t rejected and you get no reports of abuse.</p>
+                    <p class="f-fix"><strong>Fix:</strong> Publish a _dmarc TXT record, starting with p=none then moving to p=quarantine or p=reject.</p>
+                </div>
+                <div class="finding">
+                    <div class="finding-top">
+                        <span class="f-title">No common DKIM selector found</span>
+                        <span class="tag sev-low">LOW</span>
+                    </div>
+                    <p class="f-plain">We couldn&#x27;t find a DKIM signature on the usual selectors (it may use a custom one).</p>
+                    <p class="f-fix"><strong>Fix:</strong> Confirm DKIM signing is enabled with your mail provider.</p>
+                </div>
+                <div class="finding">
+                    <div class="finding-top">
+                        <span class="f-title">No MX record</span>
+                        <span class="tag sev-info">INFO</span>
+                    </div>
+                    <p class="f-plain">This domain does not receive email.</p>
+                    <p class="f-fix"><strong>Fix:</strong> If it should receive mail, add MX records.</p>
+                </div>
+    </div>
+
+    
+
+    
+            <div class="card">
+                <h2>Priority Remediation Roadmap</h2>
+                <p class="lead ok-text">No blocking issues were identified externally.
+                Confirm the internal controls listed above to be assessment-ready.</p>
+            </div>
+
+    <div class="card">
+        <h2>Methodology &amp; Limitations</h2>
+        <p class="fine">Findings were produced by the PHANTOM assessment
+        framework from an external perspective (the view an attacker has of your
+        internet-facing systems) and mapped onto the Cyber Essentials control areas.
+        Controls marked &ldquo;Verify Internally&rdquo; (such as malware
+        protection and device configuration) cannot be confirmed from outside
+        and must be checked on the devices themselves — the PHANTOM internal
+        controls checker can confirm these. This readiness report is preparatory
+        guidance and is not itself a certificate.</p>
+    </div>
+
+    <div class="footer">
+        <p>CYBE-20260803_165516 &nbsp;·&nbsp; Prepared by PHANTOM Security &nbsp;·&nbsp; 03 August 2026</p>
+        <p>Confidential — prepared for Nmap Project (scanme). Generated with the PHANTOM Framework.</p>
+    </div>
+
+</div>
+</body>
+</html>

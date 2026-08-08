@@ -25,10 +25,8 @@ Reports are written to ~/.phantom/reports/ and their paths printed at the end.
 
 import os
 import sys
-import shutil
 import tempfile
 import datetime
-import subprocess
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 
@@ -36,14 +34,7 @@ import phantom_scope as scope_mod          # noqa: E402
 import phantom_asm as asm                  # noqa: E402
 import phantom_email_security as emailsec  # noqa: E402
 import phantom_reports as reports          # noqa: E402
-
-# Non-intrusive active profile. {t} -> target. Only run if the tool exists.
-ACTIVE_PROFILE = [
-    ("nmap", "nmap -sV -Pn -T3 --top-ports 200 {t}"),
-    ("whatweb", "whatweb {t}"),
-    ("sslscan", "sslscan {t}"),
-    ("nikto", "nikto -host {t} -maxtime 120s"),
-]
+import phantom_scan as scan_mod            # noqa: E402
 
 
 def _temp_scope(target):
@@ -57,27 +48,12 @@ def _temp_scope(target):
 
 
 def run_active(target, scope):
-    """Run the non-intrusive active profile through the scope gate."""
-    results = []
-    for tool, template in ACTIVE_PROFILE:
-        if not shutil.which(tool):
-            print(f"  · {tool}: not installed, skipped")
-            continue
-        cmd = template.format(t=target)
-        allowed, reason = scope_mod.authorize_command(cmd, tool, scope)
-        if not allowed:
-            print(f"  · {tool}: blocked by scope gate ({reason})")
-            continue
-        print(f"  · {tool}: running...", flush=True)
-        try:
-            out = subprocess.run(cmd.split(), capture_output=True, text=True,
-                                 timeout=300).stdout
-        except subprocess.TimeoutExpired:
-            out = f"[TIMEOUT] {tool} exceeded time limit"
-        except (subprocess.SubprocessError, OSError) as e:
-            out = f"[ERROR] {e}"
-        results.append({"tool_name": tool, "tool_output": out})
-    return results
+    """Run the orchestrated scan (full-port + adaptive web) through the scope gate."""
+    result = scan_mod.run_scan(target, scope=scope,
+                               progress=lambda m, p: print(f"    [{p:>3}%] {m}", flush=True))
+    print(f"    open ports: {result['open_ports'] or 'none found'}")
+    print(f"    stage timings (s): {result['timings']}  total {result['duration']}s")
+    return result["results"]
 
 
 def main():
