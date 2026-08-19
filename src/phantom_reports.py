@@ -35,6 +35,8 @@ try:
     import phantom_frameworks as frameworks
     import phantom_branding as branding
     import phantom_retest as retest
+    import phantom_owasp as owasp
+    import phantom_pdf as pdf_engine
 except ImportError:  # imported as src.phantom_reports
     from src import phantom_config as config
     from src import phantom_findings as findings_mod
@@ -42,6 +44,8 @@ except ImportError:  # imported as src.phantom_reports
     from src import phantom_frameworks as frameworks
     from src import phantom_branding as branding
     from src import phantom_retest as retest
+    from src import phantom_owasp as owasp
+    from src import phantom_pdf as pdf_engine
 
 REPORTS_DIR = config.reports_dir()
 if not os.path.exists(REPORTS_DIR):
@@ -129,15 +133,31 @@ class PhantomReporter:
             return None
 
     def generate_pdf_report(self, output_path=None):
-        """Generate PDF report (requires reportlab)"""
+        """Generate the technical PDF report.
+
+        Preferred path: render the full branded HTML report with headless
+        Chrome, so the PDF matches the HTML deliverable exactly (branding,
+        CVSS/OWASP, severity styling). Falls back to the reportlab layout only
+        when no browser is available.
+        """
         if not output_path:
             output_path = os.path.join(
                 REPORTS_DIR,
                 f"scan_report_{self.timestamp}.pdf"
             )
 
+        # 1) Best quality: render the HTML deliverable via headless Chrome.
+        if pdf_engine.available():
+            result = pdf_engine.html_string_to_pdf(self._build_html(), output_path)
+            if result:
+                print(f"✓ PDF report generated (Chrome): {result}")
+                return result
+            print("⚠ Chrome PDF render failed; trying reportlab fallback...")
+
+        # 2) Fallback: legacy reportlab layout.
         if not REPORTLAB_AVAILABLE:
-            print("⚠ reportlab not installed. Install with: pip3 install reportlab")
+            print("⚠ No PDF engine available. Install Google Chrome (preferred) "
+                  "or run: pip3 install reportlab")
             return None
 
         try:
@@ -338,6 +358,53 @@ class PhantomReporter:
         except Exception as e:
             print(f"❌ Retest report generation failed: {e}")
             return None
+
+    # ── Client-grade PDF deliverables (rendered from the branded HTML) ──
+    def _html_to_pdf(self, html_content, output_path):
+        """Render a built HTML deliverable to PDF via headless Chrome."""
+        if not pdf_engine.available():
+            print("⚠ No browser found for PDF. Install Google Chrome, or set "
+                  "PHANTOM_CHROME=/path/to/chrome. (HTML report is still produced.)")
+            return None
+        result = pdf_engine.html_string_to_pdf(html_content, output_path)
+        if result:
+            print(f"✓ PDF deliverable generated: {result}")
+        else:
+            print("❌ PDF render failed.")
+        return result
+
+    def generate_framework_report_pdf(self, framework_id="cyber_essentials",
+                                      output_path=None):
+        """Client-grade PDF of a framework readiness deliverable."""
+        a = self._framework_assessment(framework_id)
+        fname = a.get("framework", {}).get("id", framework_id)
+        if not output_path:
+            client = self._slug(self._eng("client_name", "client"))
+            output_path = os.path.join(
+                REPORTS_DIR, f"{fname}_readiness_{client}_{self.timestamp}.pdf")
+        return self._html_to_pdf(self._build_assessment_html(a), output_path)
+
+    def generate_ce_report_pdf(self, output_path=None):
+        """Client-grade PDF of the Cyber Essentials readiness report."""
+        return self.generate_framework_report_pdf("cyber_essentials", output_path)
+
+    def generate_exec_summary_pdf(self, framework_id="cyber_essentials",
+                                  output_path=None):
+        """Client-grade PDF of the one-page executive summary."""
+        a = self._framework_assessment(framework_id)
+        if not output_path:
+            client = self._slug(self._eng("client_name", "client"))
+            output_path = os.path.join(
+                REPORTS_DIR, f"exec_summary_{client}_{self.timestamp}.pdf")
+        return self._html_to_pdf(self._build_exec_summary_html(a), output_path)
+
+    def generate_retest_report_pdf(self, diff, output_path=None):
+        """Client-grade PDF of a retest / change-tracking report."""
+        if not output_path:
+            client = self._slug(self._eng("client_name", "client"))
+            output_path = os.path.join(
+                REPORTS_DIR, f"retest_{client}_{self.timestamp}.pdf")
+        return self._html_to_pdf(self._build_retest_html(diff), output_path)
 
     @staticmethod
     def _slug(text):
@@ -1098,6 +1165,7 @@ class PhantomReporter:
         .badge.sev-medium   {{ background: #ffcc00; }}
         .badge.sev-low      {{ background: #00ff88; }}
         .badge.sev-info     {{ background: #00d4ff; }}
+        .badge.cvss {{ margin-left: auto; margin-right: 8px; letter-spacing: .3px; }}
 
         .layer {{ margin: 8px 0; }}
         .layer .lbl {{
@@ -1294,12 +1362,18 @@ class PhantomReporter:
         return "".join(f"<li>{html_escape(line)}</li>" for line in self._technical_summary_lines())
 
     def _get_findings(self):
-        """Extract + explain findings from the raw tool output (cached)."""
+        """Extract + explain findings from the raw tool output (cached).
+
+        Findings are additionally enriched with an OWASP Top 10 (2021) category
+        and an indicative CVSS v3.1 base score for client-grade reporting.
+        """
         if getattr(self, "_findings_cache", None) is None:
             results = self.scan_data.get("results", [])
             target = self.scan_data.get("scan", {}).get("target", "")
             try:
-                self._findings_cache = findings_mod.extract_findings(results, target)
+                findings = findings_mod.extract_findings(results, target)
+                owasp.enrich(findings)
+                self._findings_cache = findings
             except Exception:
                 self._findings_cache = []
         return self._findings_cache
@@ -1331,12 +1405,31 @@ class PhantomReporter:
             ev_html = (f'<div class="layer"><span class="lbl">Evidence</span>'
                        f'<span class="val"><span class="evidence">{html_escape(str(evidence))}</span></span></div>'
                        if evidence else "")
+            cvss = f.get("cvss") or {}
+            cvss_html = ""
+            if cvss.get("score"):
+                cvss_html = (f'<span class="badge cvss sev-{html_escape(str(cvss.get("band", sev)))}" '
+                             f'title="Indicative CVSS v3.1 base score">'
+                             f'CVSS {html_escape(str(cvss["score"]))}</span>')
+            owasp_info = f.get("owasp") or {}
+            owasp_html = ""
+            if owasp_info.get("label"):
+                owasp_html = (f'<div class="layer"><span class="lbl">OWASP Top 10</span>'
+                              f'<span class="val">{html_escape(str(owasp_info["label"]))}</span></div>')
+            cve = f.get("cve")
+            cve_html = ""
+            if cve:
+                cve_html = (f'<div class="layer"><span class="lbl">Reference</span>'
+                            f'<span class="val">{html_escape(str(cve))}</span></div>')
             cards.append(f"""
             <div class="finding-card sev-{sev}">
                 <div class="finding-head">
                     <span class="finding-title">{html_escape(str(f.get('title', 'Finding')))}</span>
+                    {cvss_html}
                     <span class="badge sev-{sev}">{sev.upper()}</span>
                 </div>
+                {owasp_html}
+                {cve_html}
                 <div class="layer"><span class="lbl">Technical</span><span class="val">{html_escape(str(f.get('technical', '')))}</span></div>
                 <div class="layer plain"><span class="lbl">In plain terms</span><span class="val">{html_escape(str(f.get('plain', '')))}</span></div>
                 <div class="layer"><span class="lbl">Why it matters</span><span class="val">{html_escape(str(f.get('risk', '')))}</span></div>
@@ -1373,12 +1466,18 @@ class PhantomReporter:
 def generate_report(scan_data, formats=["json", "html"], engagement=None):
     """Quick report generation.
 
-    formats may include: "json", "html", "pdf" (technical pentest report) and
-    "ce" (Cyber Essentials readiness deliverable). Pass ``engagement`` with
-    client_name / prepared_by / date / scope / authorization_ref to brand the
-    CE report.
+    formats may include:
+      "json", "html", "pdf"        — technical pentest report
+      "ce" / "ce-pdf"              — Cyber Essentials readiness deliverable
+      "framework" / "framework-pdf" — any framework (id from engagement
+                                      ["framework_id"], default cyber_essentials)
+      "exec" / "exec-pdf"         — one-page executive summary
+
+    Pass ``engagement`` with client_name / prepared_by / date / scope /
+    authorization_ref (and optionally framework_id) to brand the deliverables.
     """
     generator = PhantomReporter(scan_data=scan_data, engagement=engagement)
+    fw_id = (engagement or {}).get("framework_id", "cyber_essentials")
 
     results = {}
     for fmt in formats:
@@ -1391,6 +1490,16 @@ def generate_report(scan_data, formats=["json", "html"], engagement=None):
             results[fmt] = generator.generate_pdf_report()
         elif f in ("ce", "cyber_essentials"):
             results[fmt] = generator.generate_ce_report()
+        elif f in ("ce-pdf", "cyber_essentials-pdf"):
+            results[fmt] = generator.generate_ce_report_pdf()
+        elif f == "framework":
+            results[fmt] = generator.generate_framework_report(fw_id)
+        elif f == "framework-pdf":
+            results[fmt] = generator.generate_framework_report_pdf(fw_id)
+        elif f == "exec":
+            results[fmt] = generator.generate_exec_summary(fw_id)
+        elif f == "exec-pdf":
+            results[fmt] = generator.generate_exec_summary_pdf(fw_id)
 
     return results
 

@@ -1,0 +1,347 @@
+<title>PHANTOM — Client Acquisition Map</title>
+<style>
+  :root {
+    --navy:#0f2440; --navy-2:#16305a; --teal:#0ea5a5; --teal-deep:#0b7f7f;
+    --ink:#14202e; --slate:#56657a; --line:#dfe5ee; --paper:#f6f8fb;
+    --card:#ffffff; --paper-tint:#eef2f8;
+    --ok:#188a5a; --ok-bg:#e6f6ee; --warn:#b5651d; --warn-bg:#fbeee0;
+    --crit:#c0392b; --crit-bg:#fdecea;
+    --shadow:0 1px 2px rgba(15,36,64,.06), 0 8px 24px rgba(15,36,64,.06);
+    --radius:14px;
+    --display:"Helvetica Neue","Segoe UI",system-ui,-apple-system,sans-serif;
+    --body:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --ink:#e7eef7; --slate:#9fb0c4; --line:#23344c; --paper:#0b1420;
+      --card:#111f30; --paper-tint:#0e1a29; --ok-bg:#0f2018; --warn-bg:#241a10;
+      --crit-bg:#2a1512; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35); }
+  }
+  :root[data-theme="light"]{ --ink:#14202e; --slate:#56657a; --line:#dfe5ee;
+    --paper:#f6f8fb; --card:#fff; --paper-tint:#eef2f8; --ok-bg:#e6f6ee;
+    --warn-bg:#fbeee0; --crit-bg:#fdecea; }
+  :root[data-theme="dark"]{ --ink:#e7eef7; --slate:#9fb0c4; --line:#23344c;
+    --paper:#0b1420; --card:#111f30; --paper-tint:#0e1a29; --ok-bg:#0f2018;
+    --warn-bg:#241a10; --crit-bg:#2a1512; }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ background:var(--paper); color:var(--ink); font-family:var(--body);
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:28px 20px 64px; }
+  .eyebrow{ font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+    text-transform:uppercase; color:#8fd0d0; }
+
+  /* Masthead */
+  .mast{ background:linear-gradient(135deg,var(--navy),var(--navy-2));
+    color:#eaf1f8; border-radius:var(--radius); padding:32px 34px;
+    box-shadow:var(--shadow); position:relative; overflow:hidden; }
+  .mast::after{ content:""; position:absolute; right:-70px; top:-70px;
+    width:280px; height:280px; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, rgba(14,165,165,.32), transparent 62%); }
+  .mast h1{ font-family:var(--display); font-weight:800; letter-spacing:-.01em;
+    font-size:clamp(26px,4.6vw,42px); line-height:1.06; text-wrap:balance;
+    color:#fff; margin-top:10px; position:relative; z-index:1; max-width:22ch; }
+  .mast h1 em{ font-style:normal; color:var(--teal); }
+  .mast p{ position:relative; z-index:1; color:#cfdcea; margin-top:12px;
+    max-width:64ch; font-size:15.5px; }
+  .mast .meta{ position:relative; z-index:1; margin-top:18px; display:flex;
+    gap:22px; flex-wrap:wrap; }
+  .mast .meta div b{ font-family:var(--display); font-size:18px; color:#fff; display:block; }
+  .mast .meta div span{ font-family:var(--mono); font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:#8fb3b3; }
+
+  section{ margin-top:38px; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:16px; }
+  .sec-head h2{ font-family:var(--display); font-size:20px; font-weight:800;
+    letter-spacing:-.01em; }
+  .sec-head .n{ font-family:var(--mono); font-size:12px; color:var(--teal-deep); }
+  @media (prefers-color-scheme:dark){ .sec-head .n{ color:#57d0d0; } }
+  .sec-head .rule{ flex:1; height:1px; background:var(--line); }
+  .lead{ color:var(--slate); font-size:14.5px; margin:-6px 0 16px; max-width:70ch; }
+
+  /* Funnel */
+  .funnel{ display:flex; flex-direction:column; gap:8px; }
+  .fstep{ display:grid; grid-template-columns:1fr auto; align-items:center;
+    gap:14px; background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:12px 18px; box-shadow:var(--shadow);
+    position:relative; }
+  .fstep .l{ display:flex; align-items:center; gap:12px; }
+  .fstep .dot{ width:30px; height:30px; border-radius:8px; flex:none;
+    display:grid; place-items:center; font-family:var(--mono); font-weight:700;
+    font-size:12px; background:var(--paper-tint); border:1px solid var(--line);
+    color:var(--teal-deep); }
+  @media (prefers-color-scheme:dark){ .fstep .dot{ color:#57d0d0; } }
+  .fstep b{ font-family:var(--display); font-size:15px; }
+  .fstep small{ color:var(--slate); font-size:13px; display:block; }
+  .fstep .num{ font-family:var(--mono); font-weight:700; font-size:14px;
+    color:var(--teal-deep); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  @media (prefers-color-scheme:dark){ .fstep .num{ color:#57d0d0; } }
+  .fstep.win{ border-color:var(--ok); }
+  .fstep.win .num{ color:var(--ok); }
+
+  /* Phases */
+  .phase{ background:var(--card); border:1px solid var(--line);
+    border-left:5px solid var(--teal); border-radius:12px; padding:20px 22px;
+    box-shadow:var(--shadow); margin-bottom:14px; }
+  .phase .top{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .phase .when{ font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; color:#fff; background:var(--navy);
+    padding:3px 10px; border-radius:999px; }
+  .phase h3{ font-family:var(--display); font-size:18px; font-weight:800; }
+  .phase .goal{ color:var(--slate); font-size:13.5px; margin:3px 0 12px; }
+  ul.check{ list-style:none; display:grid; gap:7px; }
+  ul.check li{ display:grid; grid-template-columns:auto 1fr; gap:10px;
+    font-size:14px; align-items:start; }
+  ul.check li::before{ content:"›"; color:var(--teal-deep); font-weight:700;
+    font-family:var(--mono); }
+  @media (prefers-color-scheme:dark){ ul.check li::before{ color:#57d0d0; } }
+
+  /* Channel cards */
+  .grid{ display:grid; gap:14px; grid-template-columns:repeat(2,1fr); }
+  @media (max-width:720px){ .grid{ grid-template-columns:1fr; } }
+  .chan{ background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:16px 18px; box-shadow:var(--shadow); }
+  .chan .k{ font-family:var(--mono); font-size:10px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--teal-deep); }
+  @media (prefers-color-scheme:dark){ .chan .k{ color:#57d0d0; } }
+  .chan h4{ font-family:var(--display); font-size:15.5px; font-weight:700; margin:5px 0 5px; }
+  .chan p{ font-size:13.5px; color:var(--slate); }
+  .chan .warm{ display:inline-block; margin-top:8px; font-family:var(--mono);
+    font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    padding:2px 8px; border-radius:6px; }
+  .warm.hot{ background:var(--ok-bg); color:var(--ok); }
+  .warm.mid{ background:var(--warn-bg); color:var(--warn); }
+
+  /* Scripts */
+  .script{ background:var(--card); border:1px solid var(--line);
+    border-radius:12px; box-shadow:var(--shadow); margin-bottom:14px; overflow:hidden; }
+  .script .h{ background:var(--paper-tint); border-bottom:1px solid var(--line);
+    padding:11px 18px; font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--slate); display:flex; justify-content:space-between; }
+  .script .b{ padding:16px 18px; font-size:14px; }
+  .script .b p{ margin-bottom:9px; }
+  .script .b .hl{ color:var(--teal-deep); font-weight:600; }
+  @media (prefers-color-scheme:dark){ .script .b .hl{ color:#57d0d0; } }
+
+  /* Guardrails */
+  .rails{ background:var(--crit-bg); border:1px solid var(--crit);
+    border-radius:12px; padding:20px 22px; }
+  .rails h3{ font-family:var(--display); font-size:17px; color:var(--crit);
+    margin-bottom:10px; }
+  .rails ul{ list-style:none; display:grid; gap:8px; }
+  .rails li{ display:grid; grid-template-columns:auto 1fr; gap:10px; font-size:14px;
+    color:var(--ink); }
+  .rails li::before{ content:"✕"; color:var(--crit); font-weight:700; }
+
+  /* Metrics table */
+  .mwrap{ overflow-x:auto; }
+  table.m{ width:100%; border-collapse:collapse; font-size:14px; background:var(--card);
+    border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+    box-shadow:var(--shadow); }
+  table.m th, table.m td{ text-align:left; padding:12px 16px; border-bottom:1px solid var(--line); }
+  table.m thead th{ background:var(--navy); color:#eaf1f8; font-family:var(--mono);
+    font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; }
+  table.m tbody tr:last-child td{ border-bottom:0; }
+  table.m .num{ font-family:var(--mono); font-variant-numeric:tabular-nums;
+    color:var(--teal-deep); font-weight:600; }
+  @media (prefers-color-scheme:dark){ table.m .num{ color:#57d0d0; } }
+
+  .callout{ background:var(--ok-bg); border:1px solid var(--ok); border-radius:12px;
+    padding:16px 20px; font-size:14px; }
+  .callout b{ color:var(--ok); font-family:var(--display); }
+
+  .foot{ margin-top:34px; font-size:11.5px; color:var(--slate); text-align:center;
+    font-family:var(--mono); letter-spacing:.04em; }
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <span class="eyebrow">Go-to-market playbook · PHANTOM Security Services</span>
+    <h1>From zero to your <em>first paying clients</em>.</h1>
+    <p>A realistic map for a solo, low-budget start. Work the phases in order —
+    don't chase paid clients before the foundation and proof are in place, and
+    never test anyone without signed authorisation.</p>
+    <div class="meta">
+      <div><b>~90 days</b><span>To first revenue</span></div>
+      <div><b>1 niche</b><span>Pick, then dominate</span></div>
+      <div><b>Referrals</b><span>Your real growth engine</span></div>
+    </div>
+  </header>
+
+  <!-- FUNNEL -->
+  <section>
+    <div class="sec-head"><span class="n">01</span><h2>The pipeline (how one client happens)</h2><div class="rule"></div></div>
+    <p class="lead">Every client flows through these stages. The numbers are a
+    realistic solo starting point — track your own and improve the weakest step.</p>
+    <div class="funnel">
+      <div class="fstep"><div class="l"><span class="dot">1</span><div><b>Build a target list</b><small>25–40 businesses in one niche, with a named contact</small></div></div><span class="num">40 leads</span></div>
+      <div class="fstep"><div class="l"><span class="dot">2</span><div><b>Personalised outreach</b><small>Email + LinkedIn, referencing something specific about them</small></div></div><span class="num">→ 20–30 sent/wk</span></div>
+      <div class="fstep"><div class="l"><span class="dot">3</span><div><b>Free scoping call</b><small>20 min: their risk, their compliance pressure — not your tool</small></div></div><span class="num">→ 2–3 calls</span></div>
+      <div class="fstep"><div class="l"><span class="dot">4</span><div><b>Send the sample + proposal</b><small>Your branded sample PDF makes the value real</small></div></div><span class="num">→ 1–2 proposals</span></div>
+      <div class="fstep"><div class="l"><span class="dot">5</span><div><b>Signed authorisation + deposit</b><small>Engagement letter, scope, NDA — then you test</small></div></div><span class="num">→ 1 client</span></div>
+      <div class="fstep win"><div class="l"><span class="dot">6</span><div><b>Deliver → testimonial → 2 referrals</b><small>A happy client is two more leads and a retainer</small></div></div><span class="num">↺ compounds</span></div>
+    </div>
+  </section>
+
+  <!-- PHASES -->
+  <section>
+    <div class="sec-head"><span class="n">02</span><h2>The four phases</h2><div class="rule"></div></div>
+
+    <div class="phase">
+      <div class="top"><span class="when">Week 0–2</span><h3>Phase 1 · Foundation</h3></div>
+      <p class="goal">You can't legally or credibly charge until these exist. Do them once.</p>
+      <ul class="check">
+        <li>Pick <strong>one niche</strong> (e.g. law firms, e-commerce shops, dental/medical clinics, local SaaS). Narrow wins.</li>
+        <li>Business identity: name, professional email, one-page website, LinkedIn profile that says what you do.</li>
+        <li>Templates ready to sign: <strong>engagement letter, scope form, NDA</strong> (use a solicitor-reviewed template).</li>
+        <li>Get <strong>professional indemnity / cyber-liability insurance</strong> before any paid work.</li>
+        <li>Decide how you invoice and get paid; set your starting prices (see the sales sheet).</li>
+        <li>Sample report polished and exportable — ✅ already generated by PHANTOM.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="top"><span class="when">Week 2–6</span><h3>Phase 2 · Proof &amp; credibility</h3></div>
+      <p class="goal">Firms won't hand their network to an unknown. Manufacture trust.</p>
+      <ul class="check">
+        <li>Do <strong>2–3 free or heavily discounted assessments</strong> for local nonprofits or friends' businesses — <em>with signed authorisation</em>.</li>
+        <li>Turn each into a <strong>testimonial + a short (anonymised) case study</strong>.</li>
+        <li>Start <strong>OSCP</strong> (or PNPT/CEH) — the certification clients recognise. Put "in progress" on your profile now.</li>
+        <li>Publish 1 post/week on LinkedIn: a sanitised finding, a plain-English security tip, a compliance explainer. This <em>is</em> your marketing.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="top"><span class="when">Week 6–12</span><h3>Phase 3 · First paying clients</h3></div>
+      <p class="goal">Now hunt. Warm first, then cold, then partners.</p>
+      <ul class="check">
+        <li><strong>Warm:</strong> tell everyone you know what you do; ask for one intro each. Local business groups, chambers of commerce, alumni networks.</li>
+        <li><strong>Cold:</strong> work your niche list — 20–30 personalised messages/week (scripts below). Lead with <em>their</em> compliance/risk need.</li>
+        <li><strong>Partners:</strong> web-dev agencies, MSPs and IT-support firms have clients but don't do security — offer white-label or a referral fee.</li>
+        <li><strong>Compliance hook:</strong> target businesses that <em>need</em> Cyber Essentials / PCI for a contract or insurer — urgency sells.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="top"><span class="when">Month 3+</span><h3>Phase 4 · Repeatable pipeline</h3></div>
+      <p class="goal">Stop hunting cold. Build a machine.</p>
+      <ul class="check">
+        <li><strong>Referral system:</strong> ask every satisfied client for 2 introductions — every time.</li>
+        <li><strong>Convert to retainers:</strong> turn one-off tests into monthly monitoring + retest revenue.</li>
+        <li><strong>Raise prices</strong> as your track record and certs grow. Niche down further and own it.</li>
+        <li>Keep publishing. Inbound leads are the goal — they close far easier than cold ones.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CHANNELS -->
+  <section>
+    <div class="sec-head"><span class="n">03</span><h2>Where to hunt</h2><div class="rule"></div></div>
+    <div class="grid">
+      <div class="chan"><div class="k">Highest close rate</div><h4>Your warm network</h4><p>Friends, family, ex-colleagues, classmates who run or work at businesses. One honest "here's what I now do" message.</p><span class="warm hot">Start here</span></div>
+      <div class="chan"><div class="k">Force multiplier</div><h4>Agencies &amp; MSPs</h4><p>They already have SMB clients and no security offering. You become their white-label security team. One partner = many clients.</p><span class="warm hot">Highest leverage</span></div>
+      <div class="chan"><div class="k">Local &amp; targeted</div><h4>Chambers / business groups</h4><p>Local chambers of commerce, BNI, industry associations, meetups. In-person trust beats cold email.</p><span class="warm mid">Consistent</span></div>
+      <div class="chan"><div class="k">Cold, but scalable</div><h4>LinkedIn + niche lists</h4><p>Search your niche + role (owner, IT manager, compliance lead). Personalise every message. Google Maps for local businesses.</p><span class="warm mid">Volume game</span></div>
+      <div class="chan"><div class="k">Intent signals</div><h4>Businesses under pressure</h4><p>Chasing Cyber Essentials/PCI for a contract, recently breached competitors, or hiring for security = they care <em>now</em>.</p><span class="warm hot">Urgency = yes</span></div>
+      <div class="chan"><div class="k">Inbound (compounding)</div><h4>Content &amp; SEO</h4><p>LinkedIn posts, a blog answering "how do I pass Cyber Essentials?". Slow to start, then leads come to you.</p><span class="warm mid">Long game</span></div>
+    </div>
+  </section>
+
+  <!-- SCRIPTS -->
+  <section>
+    <div class="sec-head"><span class="n">04</span><h2>The messages (steal these)</h2><div class="rule"></div></div>
+    <p class="lead">Short, specific, about them. Never attach a scary "I scanned you" — lead with their need and offer a conversation.</p>
+
+    <div class="script">
+      <div class="h"><span>Cold email · SMB in your niche</span><span>compliance angle</span></div>
+      <div class="b">
+        <p><strong>Subject:</strong> Quick question about [Firm]'s security</p>
+        <p>Hi [Name],</p>
+        <p>I help [law firms / e-commerce businesses] in [city] find and fix the
+        security gaps attackers look for — and get ready for
+        <span class="hl">Cyber Essentials / PCI</span> without the big-consultancy price tag.</p>
+        <p>Do clients or insurers ever ask [Firm] to prove it's secure? If it'd
+        help, I'll do a free 20-minute scoping call and show you a sample of
+        exactly what you'd receive.</p>
+        <p>Worth a quick chat next week?<br>[Your name]</p>
+      </div>
+    </div>
+
+    <div class="script">
+      <div class="h"><span>LinkedIn · connection note</span><span>≤ 300 chars</span></div>
+      <div class="b">
+        <p>Hi [Name] — I run security assessments for [niche] businesses in [area]
+        (find the weaknesses attackers would, in plain English + a fix plan).
+        Not selling anything here, just connecting with local [industry] folks.</p>
+      </div>
+    </div>
+
+    <div class="script">
+      <div class="h"><span>Partner pitch · agency / MSP</span><span>white-label</span></div>
+      <div class="b">
+        <p>Hi [Name], you build/manage sites for great clients. When they ask
+        "is this secure?" or need <span class="hl">Cyber Essentials</span>, I can
+        be your security team — white-labelled under [Agency], or on a referral
+        fee. You keep the relationship, I do the testing and the report. Open to
+        a quick call?</p>
+      </div>
+    </div>
+
+    <div class="script">
+      <div class="h"><span>After delivery · the referral ask</span><span>do this every time</span></div>
+      <div class="b">
+        <p>Really glad the report was useful, [Name]. Two quick asks: (1) would
+        you be open to a short testimonial I can use? (2) Who are <span class="hl">two
+        other business owners</span> you know who'd want the same peace of mind? A
+        warm intro from you means the world.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WEEKLY RHYTHM -->
+  <section>
+    <div class="sec-head"><span class="n">05</span><h2>Your weekly rhythm</h2><div class="rule"></div></div>
+    <div class="mwrap">
+      <table class="m">
+        <thead><tr><th>Activity</th><th>Target / week</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Personalised outreach (email + LinkedIn)</td><td class="num">20–30</td><td>Top of the funnel — volume with personalisation</td></tr>
+          <tr><td>Follow-ups on prior outreach</td><td class="num">15+</td><td>Most replies come from follow-up #2–3, not #1</td></tr>
+          <tr><td>Scoping calls booked</td><td class="num">2–3</td><td>Where trust is built and needs surface</td></tr>
+          <tr><td>Content posts (LinkedIn/blog)</td><td class="num">1–2</td><td>Credibility + slow inbound engine</td></tr>
+          <tr><td>Partner / networking touch</td><td class="num">1</td><td>One agency partner can outproduce all cold outreach</td></tr>
+          <tr><td>Study toward OSCP/PNPT</td><td class="num">5–8 hrs</td><td>The certification that unlocks bigger clients</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lead" style="margin-top:14px">Track leads → calls → proposals → wins
+    in a simple spreadsheet. If a stage is leaking, fix that stage — don't just
+    pour in more leads.</p>
+  </section>
+
+  <!-- GUARDRAILS -->
+  <section>
+    <div class="sec-head"><span class="n">06</span><h2>Red lines (protect your career)</h2><div class="rule"></div></div>
+    <div class="rails">
+      <h3>Never do these — not even to win a client</h3>
+      <ul>
+        <li><strong>Never scan or test anyone without signed, written authorisation</strong> covering the exact scope. Unauthorised testing is a crime in most countries.</li>
+        <li><strong>Don't cold-pitch with "I scanned your site and found…"</strong> — it's often illegal and a terrible first impression. Use only public info before you're hired.</li>
+        <li><strong>Don't take paid work before you have insurance</strong> and signed contracts in place.</li>
+        <li><strong>Never exceed the agreed scope</strong> — PHANTOM's scope gate enforces it technically; the contract enforces it legally.</li>
+        <li><strong>Protect client data</strong> — NDA every engagement, store findings securely, delete when done.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="callout" style="margin-top:24px">
+    <b>Your first 7 days:</b> pick one niche · set up email + LinkedIn + a one-page
+    site · draft/obtain your engagement + scope + NDA templates · line up insurance ·
+    list 25 businesses in your niche with a named contact · send your first 10
+    personalised messages. Momentum beats perfection.
+  </div>
+
+  <p class="foot">PHANTOM SECURITY SERVICES · CLIENT ACQUISITION MAP · ALL TESTING UNDER SIGNED AUTHORISATION ONLY</p>
+
+</div>

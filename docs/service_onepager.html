@@ -1,0 +1,371 @@
+<title>PHANTOM Security Services — Assessment & Compliance</title>
+<style>
+  :root {
+    /* Palette — drawn from PHANTOM's own report branding (navy + teal),
+       cool-biased neutrals, semantic severity hues used only in the sample. */
+    --navy: #0f2440;
+    --navy-2: #16305a;
+    --teal: #0ea5a5;
+    --teal-deep: #0b7f7f;
+    --ink: #14202e;
+    --slate: #56657a;
+    --line: #dfe5ee;
+    --paper: #f6f8fb;
+    --card: #ffffff;
+    --paper-tint: #eef2f8;
+
+    --crit: #c0392b;   --crit-bg: #fdecea;
+    --high: #b5651d;   --high-bg: #fbeee0;
+    --med:  #b7891f;   --med-bg: #fbf4e0;
+    --ok:   #188a5a;   --ok-bg: #e6f6ee;
+
+    --shadow: 0 1px 2px rgba(15,36,64,.06), 0 8px 24px rgba(15,36,64,.06);
+    --radius: 14px;
+
+    --display: "Helvetica Neue", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e7eef7; --slate: #9fb0c4; --line: #23344c;
+      --paper: #0b1420; --card: #111f30; --paper-tint: #0e1a29;
+      --crit-bg: #2a1512; --high-bg: #241a10; --med-bg: #221d0f; --ok-bg: #0f2018;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --ink: #14202e; --slate: #56657a; --line: #dfe5ee;
+    --paper: #f6f8fb; --card: #ffffff; --paper-tint: #eef2f8;
+    --crit-bg:#fdecea; --high-bg:#fbeee0; --med-bg:#fbf4e0; --ok-bg:#e6f6ee;
+  }
+  :root[data-theme="dark"] {
+    --ink: #e7eef7; --slate: #9fb0c4; --line: #23344c;
+    --paper: #0b1420; --card: #111f30; --paper-tint: #0e1a29;
+    --crit-bg: #2a1512; --high-bg: #241a10; --med-bg: #221d0f; --ok-bg: #0f2018;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--body);
+    line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  a { color: var(--teal-deep); }
+  @media (prefers-color-scheme: dark){ a { color: #57d0d0; } }
+
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--teal-deep); }
+  @media (prefers-color-scheme: dark){ .eyebrow{ color:#57d0d0; } }
+
+  /* ── Masthead ─────────────────────────────────────────── */
+  .mast {
+    background: linear-gradient(135deg, var(--navy), var(--navy-2));
+    color: #eaf1f8; border-radius: var(--radius); padding: 30px 34px;
+    box-shadow: var(--shadow); position: relative; overflow: hidden;
+  }
+  .mast::after { content:""; position:absolute; right:-60px; top:-60px;
+    width: 260px; height: 260px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(14,165,165,.35), transparent 62%); }
+  .mast-top { display:flex; justify-content:space-between; align-items:flex-start;
+    gap:20px; flex-wrap: wrap; position: relative; z-index:1; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .glyph { width:38px; height:38px; border:2px solid var(--teal);
+    border-radius:9px; display:grid; place-items:center; color:var(--teal);
+    font-family:var(--mono); font-weight:700; font-size:20px; }
+  .brand h1 { font-family:var(--display); font-size:22px; font-weight:800;
+    letter-spacing:.02em; line-height:1.1; }
+  .brand .sub { font-family:var(--mono); font-size:10.5px; letter-spacing:.22em;
+    text-transform:uppercase; color:#9fc7c7; }
+  .contact-chip { text-align:right; font-size:13px; color:#c7d6e6; }
+  .contact-chip strong { color:#fff; }
+
+  .pitch { position:relative; z-index:1; margin-top:26px; max-width: 62ch; }
+  .pitch h2 { font-family:var(--display); font-weight:800; letter-spacing:-.01em;
+    font-size: clamp(26px, 4.4vw, 40px); line-height:1.08; text-wrap:balance;
+    color:#fff; }
+  .pitch h2 em { font-style:normal; color: var(--teal); }
+  .pitch p { margin-top:12px; font-size:15.5px; color:#cfdcea; }
+
+  .trust { display:flex; gap:22px; flex-wrap:wrap; margin-top:22px;
+    position:relative; z-index:1; }
+  .trust div { display:flex; flex-direction:column; }
+  .trust b { font-family:var(--display); font-size:19px; color:#fff; }
+  .trust span { font-family:var(--mono); font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:#8fb3b3; }
+
+  /* ── Section scaffolding ──────────────────────────────── */
+  section { margin-top: 40px; }
+  .sec-head { display:flex; align-items:baseline; gap:14px; margin-bottom:18px; }
+  .sec-head h3 { font-family:var(--display); font-size:19px; font-weight:800;
+    letter-spacing:-.01em; }
+  .sec-head .rule { flex:1; height:1px; background:var(--line); }
+
+  .grid { display:grid; gap:16px; }
+  .cols-2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width:720px){ .cols-2 { grid-template-columns: 1fr; } }
+
+  .card { background:var(--card); border:1px solid var(--line);
+    border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow); }
+  .card .k { font-family:var(--mono); font-size:10.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--teal-deep); }
+  @media (prefers-color-scheme: dark){ .card .k{ color:#57d0d0; } }
+  .card h4 { font-family:var(--display); font-size:17px; font-weight:700;
+    margin:6px 0 6px; }
+  .card p { font-size:14px; color:var(--slate); }
+
+  /* ── Sample finding (proof) ───────────────────────────── */
+  .sample { border:1px solid var(--line); border-left:5px solid var(--crit);
+    border-radius:12px; overflow:hidden; background:var(--card); box-shadow:var(--shadow); }
+  .sample .bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:14px 18px; background:var(--paper-tint); border-bottom:1px solid var(--line); }
+  .sample .title { font-family:var(--display); font-weight:700; font-size:15.5px; flex:1; }
+  .pill { font-family:var(--mono); font-size:11px; font-weight:600;
+    padding:3px 9px; border-radius:999px; letter-spacing:.03em; }
+  .pill.cvss { background:var(--crit); color:#fff; }
+  .pill.sev { background:var(--crit-bg); color:var(--crit); border:1px solid var(--crit); }
+  .pill.owasp { background:var(--paper); color:var(--slate); border:1px solid var(--line);
+    text-transform:none; }
+  .sample .rows { padding:6px 18px 16px; }
+  .row { display:grid; grid-template-columns: 132px 1fr; gap:10px; padding:9px 0;
+    border-bottom:1px dashed var(--line); font-size:14px; }
+  .row:last-child { border-bottom:0; }
+  .row .lbl { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--slate); padding-top:2px; }
+  .row .val strong { color:var(--ink); }
+  .caption { font-size:12.5px; color:var(--slate); margin-top:10px; font-style:italic; }
+
+  /* ── Pricing ──────────────────────────────────────────── */
+  .price-wrap { overflow-x:auto; }
+  table.price { width:100%; border-collapse:collapse; font-size:14px;
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden; box-shadow:var(--shadow); }
+  table.price th, table.price td { text-align:left; padding:13px 16px;
+    border-bottom:1px solid var(--line); vertical-align:top; }
+  table.price thead th { background:var(--navy); color:#eaf1f8;
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; }
+  table.price tbody tr:last-child td { border-bottom:0; }
+  table.price .svc { font-family:var(--display); font-weight:700; white-space:nowrap; }
+  table.price .amt { font-family:var(--mono); font-weight:600; white-space:nowrap;
+    font-variant-numeric: tabular-nums; }
+  table.price tr.feature { background:var(--ok-bg); }
+  table.price tr.feature .svc { color:var(--ok); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:9.5px;
+    letter-spacing:.1em; text-transform:uppercase; background:var(--teal);
+    color:#04201f; padding:2px 7px; border-radius:6px; margin-left:8px; vertical-align:middle; }
+
+  /* ── Process (a real sequence → numbered) ─────────────── */
+  .steps { counter-reset: step; display:grid; gap:12px; }
+  .step { display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:start;
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:15px 18px; box-shadow:var(--shadow); }
+  .step::before { counter-increment: step; content: counter(step,decimal-leading-zero);
+    font-family:var(--mono); font-size:13px; font-weight:700; color:var(--teal-deep);
+    background:var(--paper-tint); border:1px solid var(--line); border-radius:9px;
+    width:38px; height:38px; display:grid; place-items:center; }
+  @media (prefers-color-scheme: dark){ .step::before{ color:#57d0d0; } }
+  .step b { font-family:var(--display); font-size:15px; }
+  .step span { color:var(--slate); font-size:13.5px; }
+
+  /* ── Frameworks strip ─────────────────────────────────── */
+  .frameworks { display:flex; flex-wrap:wrap; gap:10px; }
+  .fw { font-family:var(--mono); font-size:12px; padding:8px 14px;
+    border:1px solid var(--line); border-radius:999px; background:var(--card);
+    color:var(--ink); }
+  .fw b { color:var(--teal-deep); }
+  @media (prefers-color-scheme: dark){ .fw b{ color:#57d0d0; } }
+
+  /* ── CTA ──────────────────────────────────────────────── */
+  .cta { margin-top:40px; background:linear-gradient(135deg,var(--navy),var(--navy-2));
+    color:#eaf1f8; border-radius:var(--radius); padding:28px 32px; box-shadow:var(--shadow);
+    display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap; }
+  .cta h3 { font-family:var(--display); font-size:22px; font-weight:800; color:#fff;
+    letter-spacing:-.01em; }
+  .cta p { color:#cfdcea; font-size:14px; margin-top:4px; }
+  .btn { font-family:var(--display); font-weight:700; font-size:15px; text-decoration:none;
+    background:var(--teal); color:#03201f; padding:13px 22px; border-radius:10px;
+    white-space:nowrap; box-shadow:0 6px 18px rgba(14,165,165,.35); }
+  .foot { margin-top:22px; font-size:11.5px; color:var(--slate); text-align:center; }
+  .foot .conf { font-family:var(--mono); letter-spacing:.06em; }
+
+  @media print {
+    body { background:#fff; }
+    .mast, .cta { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .card, .step, table.price { box-shadow:none; }
+  }
+</style>
+
+<div class="wrap">
+
+  <!-- Masthead -->
+  <header class="mast">
+    <div class="mast-top">
+      <div class="brand">
+        <div class="glyph">P</div>
+        <div>
+          <h1>PHANTOM</h1>
+          <div class="sub">Security&nbsp;Services</div>
+        </div>
+      </div>
+      <div class="contact-chip">
+        <div><strong>Book a free scoping call</strong></div>
+        <div>your-name@example.com · your-site.com</div>
+      </div>
+    </div>
+
+    <div class="pitch">
+      <span class="eyebrow" style="color:#8fd0d0">Penetration testing &amp; compliance readiness</span>
+      <h2>Enterprise-grade security testing, priced for <em>growing businesses</em>.</h2>
+      <p>We find the weaknesses attackers would exploit, explain them in plain
+      English, and hand you a prioritised plan to fix them — mapped to the
+      compliance frameworks your customers and auditors ask about.</p>
+    </div>
+
+    <div class="trust">
+      <div><b>Days</b><span>Turnaround, not weeks</span></div>
+      <div><b>Fixed price</b><span>No enterprise runaround</span></div>
+      <div><b>Plain English</b><span>Board-ready reporting</span></div>
+      <div><b>Retest included</b><span>Proof issues are fixed</span></div>
+    </div>
+  </header>
+
+  <!-- What you receive -->
+  <section>
+    <div class="sec-head"><h3>What you receive</h3><div class="rule"></div></div>
+    <div class="grid cols-2">
+      <div class="card">
+        <div class="k">Deliverable 01</div>
+        <h4>Technical Security Report</h4>
+        <p>Every finding with an indicative CVSS score, OWASP Top&nbsp;10 category,
+        evidence, and a clear recommendation — for your technical team.</p>
+      </div>
+      <div class="card">
+        <div class="k">Deliverable 02</div>
+        <h4>Compliance Readiness</h4>
+        <p>The same findings mapped to Cyber&nbsp;Essentials, PCI&nbsp;DSS, GDPR or
+        IASME, with a pass/fail verdict and a prioritised roadmap.</p>
+      </div>
+      <div class="card">
+        <div class="k">Deliverable 03</div>
+        <h4>Executive Summary</h4>
+        <p>A one-page, non-technical overview the owner or board can act on in
+        five minutes — risk level, headline issues, next steps.</p>
+      </div>
+      <div class="card">
+        <div class="k">Deliverable 04</div>
+        <h4>Retest &amp; Verification</h4>
+        <p>After you fix the issues, we re-test and issue a change report:
+        what's <strong>fixed</strong>, what's <strong>new</strong>, what's still open.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Proof: a real finding, the way it appears in your report -->
+  <section>
+    <div class="sec-head"><h3>A finding, the way you'll see it</h3><div class="rule"></div></div>
+    <div class="sample">
+      <div class="bar">
+        <span class="title">Apache 2.4.49 Path Traversal / RCE (CVE-2021-41773)</span>
+        <span class="pill owasp">OWASP A06:2021 · Vulnerable Components</span>
+        <span class="pill cvss">CVSS 9.8</span>
+        <span class="pill sev">CRITICAL</span>
+      </div>
+      <div class="rows">
+        <div class="row"><div class="lbl">In plain terms</div>
+          <div class="val">This web-server version lets attackers read files they
+          shouldn't — and can even run their own commands on the server.</div></div>
+        <div class="row"><div class="lbl">Why it matters</div>
+          <div class="val">A public exploit exists, so exploitation is low-effort.
+          It could expose customer data or hand over the machine.</div></div>
+        <div class="row"><div class="lbl">Recommendation</div>
+          <div class="val"><strong>Upgrade Apache to 2.4.51 or later.</strong></div></div>
+      </div>
+    </div>
+    <p class="caption">Sample only. Every issue in your report reads like this —
+    technical detail for your engineers, plain language for everyone else.</p>
+  </section>
+
+  <!-- Pricing -->
+  <section>
+    <div class="sec-head"><h3>Services &amp; pricing</h3><div class="rule"></div></div>
+    <div class="price-wrap">
+      <table class="price">
+        <thead>
+          <tr><th>Service</th><th>What you get</th><th>From</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="svc">External Assessment</td>
+            <td>Full test of your internet-facing systems + technical report</td>
+            <td class="amt">$600</td>
+          </tr>
+          <tr>
+            <td class="svc">Compliance Readiness</td>
+            <td>Findings mapped to your framework + pass/fail verdict + roadmap</td>
+            <td class="amt">$450</td>
+          </tr>
+          <tr class="feature">
+            <td class="svc">Security &amp; Compliance Bundle <span class="tag">Best value</span></td>
+            <td>Assessment + Compliance + Executive Summary — one scan, three deliverables</td>
+            <td class="amt">$950</td>
+          </tr>
+          <tr>
+            <td class="svc">Retest &amp; Verification</td>
+            <td>Re-scan after fixes + "fixed / new / still-open" change report</td>
+            <td class="amt">$200</td>
+          </tr>
+          <tr>
+            <td class="svc">Continuous Monitoring</td>
+            <td>Monthly scan, retest report &amp; priority support (retainer)</td>
+            <td class="amt">$150/mo</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">Indicative starting prices — final quote after a free
+    scoping call. Adjust to your market before sending.</p>
+  </section>
+
+  <!-- Frameworks -->
+  <section>
+    <div class="sec-head"><h3>Frameworks we map to</h3><div class="rule"></div></div>
+    <div class="frameworks">
+      <span class="fw"><b>✔</b> Cyber Essentials</span>
+      <span class="fw"><b>✔</b> PCI DSS (external subset)</span>
+      <span class="fw"><b>✔</b> GDPR — Art. 32 Data Security</span>
+      <span class="fw"><b>✔</b> IASME Cyber Assurance</span>
+      <span class="fw"><b>✔</b> OWASP Top 10 (2021)</span>
+    </div>
+  </section>
+
+  <!-- Process -->
+  <section>
+    <div class="sec-head"><h3>How an engagement works</h3><div class="rule"></div></div>
+    <div class="steps">
+      <div class="step">
+        <div><b>Free scoping call</b><br><span>We agree exactly what's in scope and what you want to prove.</span></div></div>
+      <div class="step">
+        <div><b>Written authorisation</b><br><span>A signed engagement letter and scope — testing never begins without it.</span></div></div>
+      <div class="step">
+        <div><b>Assessment</b><br><span>We test within the agreed window, strictly in-scope only.</span></div></div>
+      <div class="step">
+        <div><b>Report &amp; walkthrough</b><br><span>You get the deliverables plus a call to talk through the findings.</span></div></div>
+      <div class="step">
+        <div><b>Retest</b><br><span>Once you've fixed the issues, we verify and prove the improvement.</span></div></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta">
+    <div>
+      <h3>Find out what an attacker would see first.</h3>
+      <p>Free 20-minute scoping call — no obligation, no jargon.</p>
+    </div>
+    <a class="btn" href="mailto:your-name@example.com?subject=Security%20assessment%20enquiry">Book a scoping call →</a>
+  </div>
+
+  <p class="foot">
+    <span class="conf">CONFIDENTIAL · Prepared for prospective clients of PHANTOM Security Services</span><br>
+    All testing performed only under signed, written authorisation and strictly within agreed scope.
+  </p>
+
+</div>
