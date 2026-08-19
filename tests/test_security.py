@@ -158,6 +158,43 @@ class TestAuthorizeCommand(unittest.TestCase):
         # msfvenom legitimately writes output with -o; not a scan tool.
         self.allow("msfvenom -p linux/x64/shell LHOST=192.168.1.5 LPORT=4444 -f elf -o /tmp/payload.elf", "msfvenom")
 
+    # ── style-guide tools (phantom style.docx) ────────────────
+    def test_style_guide_scan_tools_in_scope(self):
+        self.allow("dnsenum example.com", "dnsenum")
+        self.allow("dnsrecon -d example.com", "dnsrecon")
+        self.allow("sublist3r -d example.com", "sublist3r")
+        self.allow("wpscan --url https://example.com", "wpscan")
+        self.allow("snmp-check 192.168.1.10", "snmp-check")
+        self.allow("onesixtyone 192.168.1.10", "onesixtyone")
+        self.allow("enum4linux 192.168.1.10", "enum4linux")
+        self.allow("arp-scan 192.168.1.0/24", "arp-scan")
+
+    def test_style_guide_scan_tools_out_of_scope(self):
+        self.block("dnsenum evil.com", "dnsenum")
+        self.block("wpscan --url https://evil.com", "wpscan")
+        self.block("enum4linux 10.9.9.9", "enum4linux")
+
+    def test_style_guide_scan_tools_argument_injection(self):
+        self.block("dnsenum example.com -o /tmp/out", "dnsenum")
+        self.block("dnsrecon -d example.com -j /tmp/out.json", "dnsrecon")
+        self.block("sublist3r -d example.com -o /tmp/out", "sublist3r")
+        self.block("wpscan --url https://example.com -o /tmp/out", "wpscan")
+        self.block("onesixtyone 192.168.1.10 -o /tmp/out", "onesixtyone")
+
+    def test_style_guide_local_tools_not_scope_blocked(self):
+        # Local / post-exploitation tools run on the operator box or a
+        # compromised host — exempt from scope, still injection-checked.
+        self.allow("mimikatz", "mimikatz")
+        self.allow("bloodhound", "bloodhound")
+        self.allow("linpeas", "linpeas")
+        self.allow("winpeas", "winpeas")
+        self.allow("responder -I eth0", "responder")
+        self.allow("recon-ng", "recon-ng")
+        self.allow("sherlock username", "sherlock")
+        self.allow("cherrytree", "cherrytree")
+        self.allow("dradis", "dradis")
+        # ...but injection is still blocked for them
+        self.block("responder -I eth0; rm -rf ~", "responder")
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

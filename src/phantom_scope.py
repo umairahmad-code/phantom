@@ -37,6 +37,10 @@ NO_SCOPE_TOOLS = {
     "msfvenom", "metasploit", "searchsploit", "nc", "netcat", "john",
     "hashcat", "tcpdump", "wireshark", "burpsuite", "zaproxy", "openvas",
     "nessus", "netdiscover", "custom-shell", "vpn-connect", "vpn-disconnect",
+    # Local / post-exploitation tools from the style guide: they run on the
+    # operator's box or on an already-compromised host, not against the scope.
+    "mimikatz", "bloodhound", "linpeas", "winpeas", "responder",
+    "cherrytree", "dradis", "legion", "recon-ng", "sherlock",
 }
 
 # Names permitted to use '&&' (built by Phantom itself, not user targets).
@@ -72,6 +76,15 @@ DANGEROUS_FLAGS = {
                  "--log-sql", "--log-errors", "--log-magictree"),
     "theharvester": ("-f",),
     "sslscan":  ("--xml",),
+    "dnsenum":  ("-o", "--output"),
+    "dnsrecon": ("-c", "-j", "-x", "-y", "-z", "--csv", "--xml", "--json"),
+    "sublist3r": ("-o", "--output"),
+    "wpscan":   ("-o", "--output", "--format", "--api-token"),
+    "snmp-check": ("-w", "-d"),
+    "onesixtyone": ("-o", "--outfile"),
+    "enum4linux": ("-o", "-O", "-U", "-S", "-G", "-P"),
+    "arp-scan": ("-o", "--outfile"),
+    "masscan":  ("-oL", "-oX", "-oG", "-oJ", "-oB", "-oD", "--output-filename"),
 }
 
 

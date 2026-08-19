@@ -12,47 +12,91 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 # ─── TOOL DEPENDENCY GRAPH ───────────────────────────
+# 9-phase methodology from the PHANTOM style guide (phantom style.docx):
+#   Phase 1  Passive OSINT          → theHarvester, whois, recon-ng, sherlock
+#   Phase 2  Active DNS enumeration → dnsenum, dnsrecon, sublist3r
+#   Phase 3  Live host discovery    → nmap -sn, arp-scan
+#   Phase 4  Port scanning          → nmap -sS, nmap -sV, masscan
+#   Phase 5  Service enumeration    → enum4linux, nikto, whatweb, wpscan,
+#                                     snmp-check, onesixtyone, curl
+#   Phase 6  Vulnerability mapping  → searchsploit, legion
+#   Phase 7  Exploitation           → metasploit, hydra, john, hashcat, sqlmap,
+#                                     burpsuite
+#   Phase 8  Post-exploitation      → mimikatz, bloodhound, linpeas, winpeas,
+#                                     responder
+#   Phase 9  Reporting              → auditd/log review, cherrytree/dradis
 TOOL_WORKFLOWS = {
     "recon": {
-        "tools": ["whois", "nslookup", "dig", "theHarvester", "traceroute", "host"],
-        "outputs": ["domain_info", "ip_addresses", "emails", "nameservers", "dns_records"],
-        "next_phase": "scanning",
-        "next_tools": ["nmap", "nikto"],
+        "tools": ["whois", "nslookup", "dig", "theHarvester", "traceroute",
+                   "host", "recon-ng", "sherlock"],
+        "outputs": ["domain_info", "ip_addresses", "emails", "nameservers",
+                     "dns_records", "usernames", "social_profiles"],
+        "next_phase": "dns_enum",
+        "next_tools": ["dnsenum", "dnsrecon", "sublist3r"],
     },
-    
-    "scanning": {
-        "tools": ["nmap", "nikto", "dirb", "gobuster", "masscan"],
-        "outputs": ["open_ports", "services", "versions", "web_dirs"],
-        "next_phase": "webapp",
-        "next_tools": ["sqlmap", "wapiti", "whatweb"],
+
+    "dns_enum": {
+        "tools": ["dnsenum", "dnsrecon", "sublist3r"],
+        "outputs": ["subdomains", "zone_transfers", "a_records", "mx_records",
+                     "ns_records", "txt_records"],
+        "next_phase": "host_discovery",
+        "next_tools": ["nmap", "arp-scan"],
     },
-    
-    "webapp": {
-        "tools": ["sqlmap", "wapiti", "whatweb", "curl", "burpsuite"],
-        "outputs": ["sql_injection", "xss", "paths", "technologies"],
-        "next_phase": "passwords",
-        "next_tools": ["hydra", "john", "hashcat"],
+
+    "host_discovery": {
+        "tools": ["nmap", "arp-scan"],
+        "outputs": ["live_hosts", "mac_addresses", "device_vendors"],
+        "next_phase": "port_scan",
+        "next_tools": ["nmap", "masscan"],
     },
-    
-    "passwords": {
-        "tools": ["hydra", "john", "hashcat"],
-        "outputs": ["credentials", "hashes_cracked", "wordlists_used"],
+
+    "port_scan": {
+        "tools": ["nmap", "masscan"],
+        "outputs": ["open_ports", "services", "versions"],
+        "next_phase": "service_enum",
+        "next_tools": ["enum4linux", "nikto", "whatweb", "wpscan",
+                        "snmp-check", "onesixtyone", "curl"],
+    },
+
+    "service_enum": {
+        "tools": ["enum4linux", "nikto", "whatweb", "wpscan", "snmp-check",
+                   "onesixtyone", "curl"],
+        "outputs": ["usernames", "shares", "web_technologies", "cms_plugins",
+                     "snmp_info", "http_headers"],
+        "next_phase": "vuln_mapping",
+        "next_tools": ["searchsploit", "legion"],
+    },
+
+    "vuln_mapping": {
+        "tools": ["searchsploit", "legion"],
+        "outputs": ["exploits_found", "cves", "weakest_links"],
         "next_phase": "exploitation",
-        "next_tools": ["metasploit", "msfvenom"],
+        "next_tools": ["metasploit", "hydra", "sqlmap", "burpsuite"],
     },
-    
+
     "exploitation": {
-        "tools": ["metasploit", "msfvenom", "searchsploit"],
-        "outputs": ["exploits_found", "payloads", "shells", "access_gained"],
+        "tools": ["metasploit", "msfvenom", "hydra", "john", "hashcat",
+                   "sqlmap", "burpsuite"],
+        "outputs": ["exploits_found", "payloads", "shells", "access_gained",
+                     "credentials", "databases"],
         "next_phase": "post_exploit",
-        "next_tools": ["privilege_escalation", "persistence"],
+        "next_tools": ["mimikatz", "bloodhound", "linpeas", "winpeas",
+                        "responder"],
     },
-    
+
     "post_exploit": {
-        "tools": ["mimikatz", "responder", "bloodhound"],
-        "outputs": ["credentials", "hashes", "domain_info", "high_value_targets"],
+        "tools": ["mimikatz", "bloodhound", "linpeas", "winpeas", "responder"],
+        "outputs": ["credentials", "hashes", "domain_info", "high_value_targets",
+                     "privilege_escalation_paths"],
         "next_phase": "reporting",
-        "next_tools": ["report_generation"],
+        "next_tools": ["auditd", "cherrytree", "dradis"],
+    },
+
+    "reporting": {
+        "tools": ["auditd", "cherrytree", "dradis"],
+        "outputs": ["executive_summary", "technical_findings", "remediation"],
+        "next_phase": "",
+        "next_tools": [],
     },
 }
 
@@ -88,32 +132,32 @@ VULN_TO_EXPLOIT = {
 
 class PhantomAgent:
     """Intelligent agent for PHANTOM Framework"""
-    
+
     def __init__(self, workspace_path=None):
         self.workspace = workspace_path or os.path.expanduser("~/PHANTOM_WORKSPACE")
         self.data_dir = os.path.join(self.workspace, "data")
         self.workflows_dir = os.path.join(self.workspace, "workflows")
-        
+
         os.makedirs(self.data_dir, exist_ok=True)
         os.makedirs(self.workflows_dir, exist_ok=True)
-        
+
         self.current_phase = "recon"
         self.findings = {}
         self.recommendations = []
-        
+
     def collect_tool_output(self, tool_name: str, output: str, target: str = ""):
         """Collect and parse tool output"""
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_target = re.sub(r"[^A-Za-z0-9_.-]+", "_", target).strip("_") or "target"
-        
+
         # Store raw output
         output_file = os.path.join(
             self.data_dir,
             f"{tool_name}_{safe_target}_{timestamp}.json"
         )
-        
+
         parsed_data = self._parse_tool_output(tool_name, output)
-        
+
         with open(output_file, "w") as f:
             json.dump({
                 "tool": tool_name,
@@ -122,42 +166,42 @@ class PhantomAgent:
                 "raw_output": output,
                 "parsed": parsed_data,
             }, f, indent=2)
-        
+
         # Update findings
         if tool_name not in self.findings:
             self.findings[tool_name] = []
         self.findings[tool_name].append(parsed_data)
-        
+
         return parsed_data
-    
+
     def _parse_tool_output(self, tool_name: str, output: str) -> Dict:
         """Parse tool output for key information"""
         parsed = {}
-        
+
         if tool_name == "nmap":
             parsed["open_ports"] = self._extract_open_ports(output)
             parsed["services"] = self._extract_services(output)
-        
+
         elif tool_name == "sqlmap":
             if "injectable" in output.lower():
                 parsed["sql_injection_found"] = True
                 parsed["databases"] = self._extract_databases(output)
             else:
                 parsed["sql_injection_found"] = False
-        
+
         elif tool_name == "whois":
             parsed["domain_info"] = self._extract_domain_info(output)
             parsed["registrar"] = self._extract_registrar(output)
-        
+
         elif tool_name == "theHarvester":
             parsed["emails"] = self._extract_emails(output)
             parsed["ips"] = self._extract_ips(output)
-        
+
         elif tool_name == "hydra":
             parsed["credentials"] = self._extract_credentials(output)
-        
+
         return parsed
-    
+
     def _extract_open_ports(self, output: str) -> List[int]:
         """Extract open ports from nmap output"""
         ports = []
@@ -169,7 +213,7 @@ class PhantomAgent:
                 except (ValueError, IndexError):
                     pass
         return ports
-    
+
     def _extract_services(self, output: str) -> Dict:
         """Extract service versions from nmap output"""
         services = {}
@@ -181,7 +225,7 @@ class PhantomAgent:
                     service = parts[2] if len(parts) > 2 else "unknown"
                     services[port] = service
         return services
-    
+
     def _extract_emails(self, output: str) -> List[str]:
         """Extract emails from theHarvester output"""
         emails = []
@@ -191,7 +235,7 @@ class PhantomAgent:
                 if "@" in email and "." in email:
                     emails.append(email)
         return list(set(emails))
-    
+
     def _extract_ips(self, output: str) -> List[str]:
         """Extract IPs from tool output"""
         ips = []
@@ -200,7 +244,7 @@ class PhantomAgent:
         for match in re.finditer(ip_pattern, output):
             ips.append(match.group())
         return list(set(ips))
-    
+
     def _extract_credentials(self, output: str) -> List[Dict]:
         """Extract credentials from Hydra output"""
         creds = []
@@ -208,18 +252,18 @@ class PhantomAgent:
             if "[+]" in line or "password:" in line.lower():
                 creds.append({"raw": line.strip()})
         return creds
-    
+
     def _extract_domain_info(self, output: str) -> Dict:
         """Extract domain info from WHOIS"""
         return {"raw": output[:200]}
-    
+
     def _extract_registrar(self, output: str) -> str:
         """Extract registrar from WHOIS"""
         for line in output.split("\n"):
             if "registrar" in line.lower():
                 return line.split(":", 1)[-1].strip()
         return "unknown"
-    
+
     def _extract_databases(self, output: str) -> List[str]:
         """Extract databases from SQLMap output"""
         databases = []
@@ -227,7 +271,7 @@ class PhantomAgent:
             if "database" in line.lower():
                 databases.append(line.strip())
         return databases
-    
+
     def analyze_findings(self) -> Dict:
         """Analyze all findings and generate recommendations"""
         analysis = {
@@ -237,25 +281,25 @@ class PhantomAgent:
             "next_actions": [],
             "recommended_tools": [],
         }
-        
+
         # Summarize findings
         for tool, data_list in self.findings.items():
             if data_list:
                 analysis["findings_summary"][tool] = len(data_list)
-        
+
         # Detect vulnerabilities
         if "nmap" in self.findings:
             open_ports = []
             for data in self.findings.get("nmap", []):
                 open_ports.extend(data.get("open_ports", []))
-            
+
             analysis["vulnerabilities"].append({
                 "type": "open_ports",
                 "severity": "high",
                 "count": len(set(open_ports)),
                 "ports": sorted(set(open_ports))
             })
-        
+
         if "sqlmap" in self.findings:
             for data in self.findings.get("sqlmap", []):
                 if data.get("sql_injection_found"):
@@ -264,26 +308,26 @@ class PhantomAgent:
                         "severity": "critical",
                         "databases": data.get("databases", [])
                     })
-        
+
         # Recommend next phase
         if self.current_phase in TOOL_WORKFLOWS:
             workflow = TOOL_WORKFLOWS[self.current_phase]
             analysis["next_phase"] = workflow["next_phase"]
             analysis["recommended_tools"] = workflow["next_tools"]
-            
+
             analysis["next_actions"] = [
                 f"✓ Move to {workflow['next_phase'].upper()} phase",
                 f"✓ Use these tools: {', '.join(workflow['next_tools'])}",
                 f"✓ Focus on: {', '.join(workflow['outputs'])}",
             ]
-        
+
         self.recommendations = analysis["next_actions"]
         return analysis
-    
+
     def get_next_steps(self) -> str:
         """Get formatted guidance for next phase"""
         analysis = self.analyze_findings()
-        
+
         guidance = f"""
 ╔════════════════════════════════════════════════════════════╗
 ║          PHANTOM INTELLIGENT AGENT - NEXT STEPS            ║
@@ -293,57 +337,57 @@ class PhantomAgent:
 
 🔍 FINDINGS:
 """
-        
+
         for vuln in analysis["vulnerabilities"]:
             guidance += f"\n  • [{vuln['severity'].upper()}] {vuln['type']}"
             if "count" in vuln:
                 guidance += f" ({vuln['count']} found)"
-        
+
         if not analysis["vulnerabilities"]:
             guidance += "\n  • No critical vulnerabilities detected yet"
-        
+
         guidance += f"\n\n→ NEXT PHASE: {analysis.get('next_phase', 'unknown').upper()}\n"
         guidance += f"\n🎯 RECOMMENDED TOOLS:"
         for tool in analysis.get("recommended_tools", []):
             guidance += f"\n  • {tool}"
-        
+
         guidance += f"\n\n✅ ACTION ITEMS:"
         for action in analysis.get("next_actions", []):
             guidance += f"\n  {action}"
-        
+
         guidance += "\n\n════════════════════════════════════════════════════════════\n"
-        
+
         return guidance
-    
+
     def save_workflow_state(self, state_name: str = ""):
         """Save current workflow state"""
         if not state_name:
             state_name = f"workflow_{self.current_phase}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
+
         state_file = os.path.join(self.workflows_dir, f"{state_name}.json")
-        
+
         state_data = {
             "phase": self.current_phase,
             "timestamp": datetime.datetime.now().isoformat(),
             "findings": self.findings,
             "recommendations": self.recommendations,
         }
-        
+
         with open(state_file, "w") as f:
             json.dump(state_data, f, indent=2)
-        
+
         return state_file
-    
+
     def advance_phase(self) -> str:
         """Move to next phase in workflow"""
         workflow = TOOL_WORKFLOWS.get(self.current_phase, {})
         next_phase = workflow.get("next_phase", "unknown")
-        
+
         if next_phase != "unknown":
             self.current_phase = next_phase
             self.save_workflow_state()
             return f"✓ Advanced to {next_phase.upper()} phase"
-        
+
         return "✗ Cannot advance further"
 
 

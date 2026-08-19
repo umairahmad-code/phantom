@@ -53,6 +53,19 @@ def rule_based_plan(findings, tools_run=None):
             "Find everything exposed before scanning.", "high")
         return {"engine": "rules", "steps": steps}
 
+    # 1b. Recon done but no DNS enumeration yet → expand the attack surface.
+    if ({"whois", "dig", "theharvester", "nslookup", "host"} & tools_run) and \
+            not ({"dnsenum", "dnsrecon", "sublist3r"} & tools_run):
+        add("Enumerate subdomains (dnsenum, dnsrecon, sublist3r)",
+            "Recon found the base domain; subdomains often expose dev/admin hosts.",
+            "high")
+
+    # 1c. Subdomains/hosts known but no live-host discovery yet.
+    if ({"dnsenum", "dnsrecon", "sublist3r"} & tools_run) and \
+            not ({"arp-scan"} & tools_run) and "nmap" not in tools_run:
+        add("Discover live hosts (nmap -sn / arp-scan)",
+            "Narrow the target list before port scanning to reduce noise.", "high")
+
     # 2. Ports found but no version scan → deepen.
     open_ports = [f for f in findings if str(f.get("kind", "")) == "" and
                   "open port" in str(f.get("title", "")).lower()]
@@ -60,10 +73,22 @@ def rule_based_plan(findings, tools_run=None):
         add("Run a service/version scan (nmap -sV) on the open ports",
             "Open ports were found; identify versions to match known CVEs.", "high")
 
+    # 2b. Ports found but no service enumeration yet.
+    if open_ports and not ({"enum4linux", "nikto", "whatweb", "wpscan",
+                            "snmp-check", "onesixtyone"} & tools_run):
+        add("Enumerate the open services (enum4linux, nikto, whatweb, snmp-check)",
+            "Dig into SMB shares, web tech, and SNMP for usernames and configs.",
+            "high")
+
     # 3. Web service present but not web-scanned.
     if _has_web(findings) and not ({"nikto", "whatweb", "wapiti"} & tools_run):
         add("Run web checks (nikto, whatweb) on the web service",
             "A web server is exposed — check for misconfig and known issues.", "high")
+
+    # 3b. WordPress detected but wpscan not run.
+    if "wordpress" in str(findings).lower() and "wpscan" not in tools_run:
+        add("Scan the WordPress install (wpscan)",
+            "WordPress plugins/themes are a common source of known CVEs.", "high")
 
     # 4. Web + no SQLi test yet.
     if _has_web(findings) and "sqlmap" not in tools_run:
@@ -75,6 +100,12 @@ def rule_based_plan(findings, tools_run=None):
         add("Confirm the version-based CVEs and check exploit availability "
             "(searchsploit)", "Known-vulnerable versions were detected.", "high")
 
+    # 5b. Exploits confirmed → move to exploitation.
+    if "cve" in kinds and not ({"metasploit", "msfvenom", "hydra", "sqlmap"} & tools_run):
+        add("Attempt exploitation (metasploit / hydra / sqlmap)",
+            "Known-vulnerable services were confirmed — try the matching exploit.",
+            "medium")
+
     # 6. Cleartext / weak creds → access hardening.
     if "weak_credentials" in kinds:
         add("Document the credential weakness and recommend MFA + lockout",
@@ -82,6 +113,13 @@ def rule_based_plan(findings, tools_run=None):
     if "cleartext_protocol" in kinds:
         add("Flag cleartext services for migration to encrypted equivalents",
             "Credentials are exposed on the wire.", "medium")
+
+    # 6b. Access gained → post-exploitation.
+    if ({"metasploit", "hydra", "sqlmap"} & tools_run) and \
+            not ({"mimikatz", "bloodhound", "linpeas", "winpeas", "responder"} & tools_run):
+        add("Run post-exploitation enumeration (mimikatz, bloodhound, linpeas)",
+            "A foothold was gained — escalate privileges and map lateral movement.",
+            "medium")
 
     # 7. Email spoofing not yet checked.
     if not ({"email", "dmarc", "spf"} & tools_run):

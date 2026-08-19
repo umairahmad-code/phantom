@@ -27,43 +27,72 @@
     "path": "~/.phantom/reports"
   },
   "tools": {
-    "recon": [
-      "whois",
-      "nslookup",
-      "dig",
-      "theHarvester",
-      "traceroute",
-      "host"
-    ],
-    "scanning": [
-      "nmap",
-      "nikto",
-      "dirb",
-      "gobuster",
-      "masscan"
-    ],
-    "webapp": [
-      "sqlmap",
-      "wapiti",
-      "whatweb",
-      "curl",
-      "burpsuite"
-    ],
-    "passwords": [
-      "hydra",
-      "john",
-      "hashcat"
-    ],
-    "exploitation": [
-      "metasploit",
-      "msfvenom",
-      "searchsploit"
-    ],
-    "network": [
-      "wireshark",
-      "tcpdump",
-      "arpspoof",
-      "ettercap"
-    ]
+      "recon": [
+          "whois",
+          "nslookup",
+          "dig",
+          "theHarvester",
+          "traceroute",
+          "host",
+          "recon-ng",
+          "sherlock"
+      ],
+      "dns_enum": [
+          "dnsenum",
+          "dnsrecon",
+          "sublist3r"
+      ],
+      "scanning": [
+          "nmap",
+          "nikto",
+          "dirb",
+          "gobuster",
+          "masscan",
+          "arp-scan",
+          "enum4linux",
+          "snmp-check",
+          "onesixtyone",
+          "legion"
+      ],
+      "webapp": [
+          "sqlmap",
+          "wapiti",
+          "whatweb",
+          "curl",
+          "burpsuite",
+          "wpscan"
+      ],
+      "passwords": [
+          "hydra",
+          "john",
+          "hashcat"
+      ],
+      "exploitation": [
+          "metasploit",
+          "msfvenom",
+          "searchsploit",
+          "mimikatz",
+          "bloodhound",
+          "linpeas",
+          "winpeas",
+          "responder"
+      ],
+      "post_exploit": [
+          "mimikatz",
+          "bloodhound",
+          "linpeas",
+          "winpeas",
+          "responder"
+      ],
+      "reporting": [
+          "cherrytree",
+          "dradis"
+      ],
+      "network": [
+          "wireshark",
+          "tcpdump",
+          "arpspoof",
+          "ettercap"
+      ]
   }
 }

@@ -95,6 +95,58 @@ class TestPlanner(unittest.TestCase):
         plan = planner.suggest_next_actions([], use_ai=True, engine=Broken())
         self.assertEqual(plan["engine"], "rules")
 
+    def test_recon_done_suggests_dns_enum(self):
+        plan = planner.suggest_next_actions([], tools_run=["whois", "dig"], use_ai=False)
+        self.assertTrue(any("dnsenum" in s["action"].lower() for s in plan["steps"]))
+
+    def test_dns_done_suggests_host_discovery(self):
+        plan = planner.suggest_next_actions([], tools_run=["dnsenum", "sublist3r"], use_ai=False)
+        self.assertTrue(any("live host" in s["action"].lower() for s in plan["steps"]))
+
+    def test_ports_found_suggests_service_enum(self):
+        findings = fm.extract_findings(R_OLD, "x")
+        plan = planner.suggest_next_actions(findings, tools_run=["nmap"], use_ai=False)
+        self.assertTrue(any("enum4linux" in s["action"].lower() or "nikto" in s["action"].lower()
+                            for s in plan["steps"]))
+
+    def test_exploited_suggests_post_exploit(self):
+        findings = fm.extract_findings(R_OLD, "x")
+        plan = planner.suggest_next_actions(findings, tools_run=["nmap", "metasploit"], use_ai=False)
+        self.assertTrue(any("post-exploitation" in s["action"].lower() for s in plan["steps"]))
+
+
+class TestAgentWorkflow(unittest.TestCase):
+    """The 9-phase style-guide workflow (phantom style.docx) must be wired up."""
+
+    def setUp(self):
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "agents"))
+        from phantom_agent import TOOL_WORKFLOWS
+        self.workflows = TOOL_WORKFLOWS
+    def test_nine_phases_in_order(self):
+        expected = ["recon", "dns_enum", "host_discovery", "port_scan",
+                    "service_enum", "vuln_mapping", "exploitation",
+                    "post_exploit", "reporting"]
+        self.assertEqual(list(self.workflows.keys()), expected)
+
+    def test_phase_chain_is_connected(self):
+        for phase, wf in self.workflows.items():
+            if wf["next_phase"]:
+                self.assertIn(wf["next_phase"], self.workflows,
+                              f"{phase} -> {wf['next_phase']} missing")
+
+    def test_style_guide_tools_present(self):
+        all_tools = {t for wf in self.workflows.values() for t in wf["tools"]}
+        for tool in ["theHarvester", "whois", "recon-ng", "sherlock",
+                     "dnsenum", "dnsrecon", "sublist3r", "nmap", "arp-scan",
+                     "masscan", "enum4linux", "nikto", "whatweb", "wpscan",
+                     "snmp-check", "onesixtyone", "curl", "searchsploit",
+                     "legion", "metasploit", "hydra", "john", "hashcat",
+                     "sqlmap", "burpsuite", "mimikatz", "bloodhound",
+                     "linpeas", "winpeas", "responder", "cherrytree", "dradis"]:
+            self.assertIn(tool, all_tools, f"{tool} missing from workflow")
+
+    def test_reporting_is_terminal_phase(self):
+        self.assertEqual(self.workflows["reporting"]["next_phase"], "")
 
 class TestBranding(unittest.TestCase):
     def test_load_has_defaults(self):
